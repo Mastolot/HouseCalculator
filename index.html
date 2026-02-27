@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chièvres — Simulateur Hypothécaire Belge</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,9 +23,9 @@
         }
     </script>
     <style>
-        /* Custom range slider */
+        /* Custom range slider — filled track via linear-gradient */
         input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 9999px; outline: none; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 3px solid #6366f1; transition: box-shadow 0.15s; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 3px solid #6366f1; transition: box-shadow 0.15s; position: relative; z-index: 2; }
         .dark input[type="range"] { background: #374151; }
         .light-mode input[type="range"] { background: #d1d5db; }
         .dark input[type="range"]::-webkit-slider-thumb { background: #1e1b4b; box-shadow: 0 0 0 3px rgba(99,102,241,0.3); }
@@ -33,6 +34,7 @@
         input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 3px solid #6366f1; }
         .dark input[type="range"]::-moz-range-thumb { background: #1e1b4b; }
         .light-mode input[type="range"]::-moz-range-thumb { background: #fff; }
+        input[type="range"]::-moz-range-progress { background: #6366f1; border-radius: 9999px; height: 6px; }
 
         /* Smooth transitions */
         * { transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
@@ -79,6 +81,32 @@
         .scenario-card .scenario-remove { opacity: 0; transition: opacity 0.2s; }
         .scenario-card:hover .scenario-remove { opacity: 1; }
         .scenario-badge { display: inline-block; width: 24px; height: 24px; border-radius: 50%; text-align: center; line-height: 24px; font-size: 0.75rem; font-weight: 700; }
+
+        /* Sticky mobile bar */
+        .mobile-sticky-bar { display: none; }
+        @media (max-width: 1023px) {
+            .mobile-sticky-bar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; padding: 10px 16px; gap: 12px; align-items: center; justify-content: space-between; border-top: 1px solid rgba(55,65,81,0.5); }
+            .dark .mobile-sticky-bar { background: rgba(3,7,18,0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+            .light-mode .mobile-sticky-bar { background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-color: rgba(209,213,219,0.5); }
+            body { padding-bottom: 64px; }
+        }
+
+        /* Toast notification */
+        @keyframes toastIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-10px); opacity: 0; } }
+        .toast { animation: toastIn 0.3s ease-out forwards; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 100; padding: 10px 20px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; pointer-events: none; }
+        .toast.out { animation: toastOut 0.3s ease-in forwards; }
+        @media (min-width: 1024px) { .toast { bottom: 24px; } }
+
+        /* Collapsible detail */
+        .detail-toggle-icon { transition: transform 0.2s; }
+        .detail-toggle-icon.open { transform: rotate(180deg); }
+
+        /* Header responsive */
+        @media (max-width: 640px) {
+            .header-controls { flex-direction: column; gap: 8px; align-items: flex-end; }
+            .header-controls .region-row { order: 2; }
+        }
     </style>
 </head>
 <body class="dark bg-gray-950 text-gray-100 min-h-screen font-sans">
@@ -95,16 +123,16 @@
                     <p class="text-xs text-gray-400">Simulateur hypothécaire belge</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 header-controls">
                 <!-- Region toggle -->
-                <div class="flex items-center gap-2 text-sm">
+                <div class="flex items-center gap-2 text-sm region-row">
                     <span id="labelWallonie" class="font-medium text-white">Wallonie</span>
                     <div id="regionToggle" class="toggle-track bg-brand-600" onclick="toggleRegion()">
                         <div class="toggle-thumb"></div>
                     </div>
                     <span id="labelBruxelles" class="font-medium text-gray-400">Bruxelles</span>
                 </div>
-                <div class="w-px h-6 bg-gray-700"></div>
+                <div class="w-px h-6 bg-gray-700 hidden sm:block"></div>
                 <!-- Dark/Light toggle -->
                 <button id="themeBtn" onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-gray-800 transition-colors" title="Changer de thème">
                     <svg id="iconMoon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
@@ -121,7 +149,7 @@
             <!-- LEFT COLUMN — Inputs -->
             <div class="lg:col-span-5 space-y-5 animate-in">
 
-                <!-- Prix du bien -->
+                <!-- Prix + Apport (grouped) -->
                 <div class="card-section rounded-2xl p-5 bg-gray-900 border border-gray-800">
                     <div class="flex items-center justify-between mb-1">
                         <label class="text-sm font-semibold text-gray-300">Prix du bien</label>
@@ -131,17 +159,15 @@
                     <div class="flex justify-between text-xs text-gray-500 mt-1">
                         <span>100 000 €</span><span>1 200 000 €</span>
                     </div>
-                </div>
-
-                <!-- Apport personnel -->
-                <div class="card-section rounded-2xl p-5 bg-gray-900 border border-gray-800 animate-in animate-in-delay-1">
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="text-sm font-semibold text-gray-300">Apport personnel</label>
-                        <span id="downPaymentDisplay" class="text-xl font-bold text-brand-400 result-value">50 000 €</span>
-                    </div>
-                    <input type="range" id="downPayment" min="0" max="500000" step="1000" value="50000" oninput="calculate()">
-                    <div class="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>0 €</span><span>500 000 €</span>
+                    <div class="border-t border-gray-800 mt-4 pt-4">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-sm font-semibold text-gray-300">Apport personnel</label>
+                            <span id="downPaymentDisplay" class="text-xl font-bold text-brand-400 result-value">50 000 €</span>
+                        </div>
+                        <input type="range" id="downPayment" min="0" max="500000" step="1000" value="50000" oninput="calculate()">
+                        <div class="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>0 €</span><span>500 000 €</span>
+                        </div>
                     </div>
                 </div>
 
@@ -199,7 +225,7 @@
                     </div>
                 </div>
 
-                <!-- Taux d'intérêt -->
+                <!-- Taux + Durée (grouped) -->
                 <div class="card-section rounded-2xl p-5 bg-gray-900 border border-gray-800 animate-in animate-in-delay-2">
                     <div class="flex items-center justify-between mb-1">
                         <label class="text-sm font-semibold text-gray-300">Taux d'intérêt annuel</label>
@@ -212,17 +238,15 @@
                     <div id="pebBonusNote" class="hidden mt-2 text-xs text-green-400 font-medium">
                         ✨ Bonus PEB : -0,15% appliqué → taux effectif : <span id="effectiveRateNote"></span>
                     </div>
-                </div>
-
-                <!-- Durée du prêt -->
-                <div class="card-section rounded-2xl p-5 bg-gray-900 border border-gray-800 animate-in animate-in-delay-3">
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="text-sm font-semibold text-gray-300">Durée du prêt</label>
-                        <span id="durationDisplay" class="text-xl font-bold text-brand-400 result-value">25 ans</span>
-                    </div>
-                    <input type="range" id="duration" min="5" max="30" step="1" value="25" oninput="calculate()">
-                    <div class="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>5 ans</span><span>30 ans</span>
+                    <div class="border-t border-gray-800 mt-4 pt-4">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-sm font-semibold text-gray-300">Durée du prêt</label>
+                            <span id="durationDisplay" class="text-xl font-bold text-brand-400 result-value">25 ans</span>
+                        </div>
+                        <input type="range" id="duration" min="5" max="30" step="1" value="25" oninput="calculate()">
+                        <div class="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>5 ans</span><span>30 ans</span>
+                        </div>
                     </div>
                 </div>
 
@@ -355,10 +379,15 @@
                     </div>
                 </div>
 
-                <!-- Detail breakdown -->
-                <div class="rounded-2xl p-6 bg-gray-900 border border-gray-800 animate-in animate-in-delay-3">
-                    <h3 class="text-sm font-semibold text-gray-300 mb-4">Détail des frais</h3>
-                    <div class="space-y-2 text-sm" id="feeBreakdown"></div>
+                <!-- Detail breakdown (collapsible) -->
+                <div class="rounded-2xl bg-gray-900 border border-gray-800 animate-in animate-in-delay-3">
+                    <button onclick="toggleFeeDetail()" class="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-gray-800/30 rounded-2xl transition-colors">
+                        <h3 class="text-sm font-semibold text-gray-300">Détail des frais</h3>
+                        <svg id="feeDetailIcon" class="w-5 h-5 text-gray-500 detail-toggle-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="feeDetailPanel" class="hidden px-6 pb-6">
+                        <div class="space-y-2 text-sm" id="feeBreakdown"></div>
+                    </div>
                 </div>
 
                 <!-- Scenario Save Button -->
@@ -382,6 +411,32 @@
             </div>
         </div>
     </main>
+
+    <!-- Mobile Sticky Bar -->
+    <div class="mobile-sticky-bar" id="mobileBar">
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="text-center">
+                <div class="text-[10px] text-gray-400 uppercase tracking-wider leading-none mb-0.5">Mensualité</div>
+                <div id="stickyMonthly" class="text-base font-bold text-white result-value leading-tight">—</div>
+            </div>
+            <div class="w-px h-8 bg-gray-700 flex-shrink-0"></div>
+            <div class="text-center">
+                <div class="text-[10px] text-gray-400 uppercase tracking-wider leading-none mb-0.5">Endettement</div>
+                <div id="stickyDebt" class="text-base font-bold result-value leading-tight">—</div>
+            </div>
+            <div class="w-px h-8 bg-gray-700 flex-shrink-0"></div>
+            <div class="text-center">
+                <div class="text-[10px] text-gray-400 uppercase tracking-wider leading-none mb-0.5">Reste à vivre</div>
+                <div id="stickyRemain" class="text-base font-bold text-white result-value leading-tight">—</div>
+            </div>
+        </div>
+        <button onclick="document.getElementById('feasibilityCard').scrollIntoView({behavior:'smooth'})" class="p-2 rounded-lg bg-brand-600 text-white flex-shrink-0" title="Voir résultats">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+        </button>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toastContainer"></div>
 
     <!-- Footer -->
     <footer class="text-center py-6 text-xs text-gray-600 border-t border-gray-800/50 mt-10">
@@ -471,6 +526,52 @@
         document.querySelectorAll('.peb-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
         calculate();
+    }
+
+    // ─── Filled Range Track ─────────────────────────────
+    function updateFilledTrack(input) {
+        const min = parseFloat(input.min);
+        const max = parseFloat(input.max);
+        const val = parseFloat(input.value);
+        const pct = ((val - min) / (max - min)) * 100;
+        const trackBg = isDark ? '#374151' : '#d1d5db';
+        input.style.background = `linear-gradient(to right, #6366f1 0%, #6366f1 ${pct}%, ${trackBg} ${pct}%, ${trackBg} 100%)`;
+    }
+
+    function updateAllFilledTracks() {
+        document.querySelectorAll('input[type="range"]').forEach(updateFilledTrack);
+    }
+
+    // ─── Toast Notification ───────────────────────────────
+    function showToast(msg) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        const bg = isDark ? 'bg-gray-800 text-white border border-gray-700' : 'bg-white text-gray-900 border border-gray-200 shadow-lg';
+        toast.className = `toast ${bg}`;
+        toast.textContent = msg;
+        container.appendChild(toast);
+        setTimeout(() => { toast.classList.add('out'); }, 2000);
+        setTimeout(() => { toast.remove(); }, 2300);
+    }
+
+    // ─── Fee Detail Toggle ────────────────────────────────
+    function toggleFeeDetail() {
+        const panel = document.getElementById('feeDetailPanel');
+        const icon = document.getElementById('feeDetailIcon');
+        panel.classList.toggle('hidden');
+        icon.classList.toggle('open');
+    }
+
+    // ─── Sticky Bar Update ────────────────────────────────
+    function updateStickyBar(monthlyTotal, debtRatio, remaining) {
+        document.getElementById('stickyMonthly').textContent = fmt(monthlyTotal);
+        const stickyDebt = document.getElementById('stickyDebt');
+        stickyDebt.textContent = debtRatio.toFixed(1).replace('.', ',') + '%';
+        stickyDebt.classList.remove('text-green-400', 'text-orange-400', 'text-red-400');
+        if (debtRatio < 35) stickyDebt.classList.add('text-green-400');
+        else if (debtRatio <= 45) stickyDebt.classList.add('text-orange-400');
+        else stickyDebt.classList.add('text-red-400');
+        document.getElementById('stickyRemain').textContent = fmt(remaining);
     }
 
     // ─── Format helpers ───────────────────────────────────
@@ -736,6 +837,12 @@
 
         // Fee breakdown
         updateFeeBreakdown({ registrationFees, notary, mortgage, totalFees, price, financingNeed, monthly, monthlyTotal, asrd, asrdEnabled, n, totalCredit, effectiveRate, debtRatio, remaining, ltv });
+
+        // Sticky mobile bar
+        updateStickyBar(monthlyTotal, debtRatio, remaining);
+
+        // Filled range tracks
+        updateAllFilledTracks();
     }
 
     // ─── Feasibility Gauge ────────────────────────────────
@@ -996,6 +1103,7 @@
         const s = { ...lastCalcResult, id: Date.now() };
         savedScenarios.push(s);
         renderScenarios();
+        showToast(`Scénario ${scenarioLabels[(savedScenarios.length - 1) % 3]} sauvegardé ✓`);
     }
 
     function removeScenario(id) {
