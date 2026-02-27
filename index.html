@@ -73,6 +73,12 @@
         input[type="number"] { -moz-appearance: textfield; }
 
         .result-value { font-variant-numeric: tabular-nums; }
+
+        /* Scenario cards */
+        .scenario-card { position: relative; }
+        .scenario-card .scenario-remove { opacity: 0; transition: opacity 0.2s; }
+        .scenario-card:hover .scenario-remove { opacity: 1; }
+        .scenario-badge { display: inline-block; width: 24px; height: 24px; border-radius: 50%; text-align: center; line-height: 24px; font-size: 0.75rem; font-weight: 700; }
     </style>
 </head>
 <body class="dark bg-gray-950 text-gray-100 min-h-screen font-sans">
@@ -92,11 +98,11 @@
             <div class="flex items-center gap-4">
                 <!-- Region toggle -->
                 <div class="flex items-center gap-2 text-sm">
-                    <span id="labelWallonie" class="font-medium text-gray-400">Wallonie</span>
+                    <span id="labelWallonie" class="font-medium text-white">Wallonie</span>
                     <div id="regionToggle" class="toggle-track bg-brand-600" onclick="toggleRegion()">
                         <div class="toggle-thumb"></div>
                     </div>
-                    <span id="labelBruxelles" class="font-medium text-white">Bruxelles</span>
+                    <span id="labelBruxelles" class="font-medium text-gray-400">Bruxelles</span>
                 </div>
                 <div class="w-px h-6 bg-gray-700"></div>
                 <!-- Dark/Light toggle -->
@@ -145,7 +151,7 @@
                         <label class="text-sm font-semibold text-gray-300">Revenus nets mensuels (ménage)</label>
                     </div>
                     <div class="relative">
-                        <input type="number" id="income" value="3700" min="0" step="50"
+                        <input type="number" id="income" value="3500" min="0" step="50"
                             class="w-full px-4 py-3 pr-12 rounded-xl bg-gray-800 border border-gray-700 text-white text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                             oninput="calculate()">
                         <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">€/mois</span>
@@ -233,6 +239,52 @@
                         <button class="peb-btn peb-G" onclick="selectPEB('G', this)">G</button>
                     </div>
                 </div>
+
+                <!-- ASRD (Assurance Solde Restant Dû) -->
+                <div class="card-section rounded-2xl p-5 bg-gray-900 border border-gray-800 animate-in animate-in-delay-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm font-semibold text-gray-300">Assurance solde restant dû</label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="asrdEnabled" class="w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800" onchange="toggleASRD()">
+                            <span class="text-xs text-gray-400">Inclure</span>
+                        </label>
+                    </div>
+                    <p class="text-xs text-gray-500 leading-relaxed mb-3">Quasi obligatoire en Belgique. Protège le remboursement en cas de décès.</p>
+                    <div id="asrdPanel" class="hidden space-y-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-gray-400 block mb-1">Âge de l'emprunteur</label>
+                                <div class="relative">
+                                    <input type="number" id="asrdAge" value="30" min="18" max="65" step="1"
+                                        class="w-full px-3 py-2 pr-10 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                        oninput="calculate()">
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">ans</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400 block mb-1">Couverture</label>
+                                <select id="asrdCoverage" class="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500" onchange="calculate()">
+                                    <option value="1">100%</option>
+                                    <option value="0.5">50% (couple)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="asrdSmoker" class="w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800" onchange="calculate()">
+                            <span class="text-xs text-gray-400">Fumeur <span class="text-gray-600">(+60% sur la prime)</span></span>
+                        </label>
+                        <div class="rounded-lg bg-brand-500/10 border border-brand-500/20 px-3 py-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-brand-300">Prime unique estimée</span>
+                                <span id="asrdSinglePremium" class="text-sm font-bold text-brand-400 result-value">—</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-1">
+                                <span class="text-xs text-brand-300">Équivalent mensuel</span>
+                                <span id="asrdMonthlyDisplay" class="text-sm font-bold text-brand-400 result-value">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- RIGHT COLUMN — Results -->
@@ -283,8 +335,8 @@
                         <div id="totalCost" class="text-base sm:text-lg font-bold text-white result-value">—</div>
                     </div>
                     <div class="rounded-2xl p-4 bg-gray-900 border border-gray-800 text-center">
-                        <div class="text-xs text-gray-400 mb-1">Frais d'enregistrement</div>
-                        <div id="regFees" class="text-base sm:text-lg font-bold text-white result-value">—</div>
+                        <div class="text-xs text-gray-400 mb-1">Quotité (LTV)</div>
+                        <div id="ltvDisplay" class="text-base sm:text-lg font-bold text-white result-value">—</div>
                     </div>
                     <div class="rounded-2xl p-4 bg-gray-900 border border-gray-800 text-center">
                         <div class="text-xs text-gray-400 mb-1">Frais totaux</div>
@@ -309,6 +361,24 @@
                     <div class="space-y-2 text-sm" id="feeBreakdown"></div>
                 </div>
 
+                <!-- Scenario Save Button -->
+                <div class="flex gap-3 animate-in animate-in-delay-3">
+                    <button onclick="saveScenario()" class="flex-1 py-3 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                        Sauvegarder ce scénario
+                    </button>
+                    <button id="clearScenariosBtn" onclick="clearScenarios()" class="hidden py-3 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 font-medium text-sm transition-colors">
+                        Effacer tout
+                    </button>
+                </div>
+
+                <!-- Scenario Comparison -->
+                <div id="scenarioSection" class="hidden rounded-2xl p-6 bg-gray-900 border border-gray-800 animate-in">
+                    <h3 class="text-sm font-semibold text-gray-300 mb-4">📊 Comparaison de scénarios</h3>
+                    <div id="scenarioGrid" class="grid gap-4"></div>
+                    <div id="scenarioTable" class="mt-4 overflow-x-auto"></div>
+                </div>
+
             </div>
         </div>
     </main>
@@ -320,10 +390,12 @@
 
 <script>
     // ─── State ────────────────────────────────────────────
-    let region = 'bruxelles'; // 'bruxelles' | 'wallonie'
+    let region = 'wallonie'; // 'bruxelles' | 'wallonie'
     let pebScore = 'C';
     let isDark = true;
     let chart = null;
+    let savedScenarios = []; // max 3
+    let lastCalcResult = null; // store latest calculation for scenario saving
 
     // ─── Theme Toggle ─────────────────────────────────────
     function toggleTheme() {
@@ -429,18 +501,95 @@
         }
     }
 
+    // ─── Barème dégressif notaire belge (AR 1950, indexé) ──
+    function notaryFeesScale(amount) {
+        const brackets = [
+            { up: 7500, rate: 0.0456 },
+            { up: 17500, rate: 0.0285 },
+            { up: 30000, rate: 0.0228 },
+            { up: 45495, rate: 0.0171 },
+            { up: 64095, rate: 0.0114 },
+            { up: 250095, rate: 0.0057 },
+            { up: Infinity, rate: 0.00057 }
+        ];
+        let fees = 0, prev = 0;
+        for (const b of brackets) {
+            if (amount <= prev) break;
+            fees += (Math.min(amount, b.up) - prev) * b.rate;
+            prev = b.up;
+        }
+        return fees;
+    }
+
     function calcNotaryFees(price) {
-        // ~1.1% du prix
-        return price * 0.011;
+        // Honoraires (barème dégressif réglementé)
+        const honoraires = notaryFeesScale(price);
+        // TVA 21% sur les honoraires
+        const tva = honoraires * 0.21;
+        // Frais administratifs et de recherche
+        const admin = 1100;
+        return { honoraires, tva, admin, total: honoraires + tva + admin };
     }
 
-    function calcCreditDeedFees() {
-        // Forfait simplifié
-        return 4500;
+    function calcMortgageDeedFees(loanAmount) {
+        // Droit d'enregistrement sur l'acte hypothécaire : 1%
+        const registrationTax = loanAmount * 0.01;
+        // Droit d'inscription hypothécaire (conservation) : 0,3%
+        const inscriptionFee = loanAmount * 0.003;
+        // Honoraires du notaire pour l'acte de crédit (même barème)
+        const honoraires = notaryFeesScale(loanAmount);
+        const tva = honoraires * 0.21;
+        // Frais administratifs acte de crédit
+        const admin = 850;
+        // Frais de dossier bancaire
+        const dossierBank = 500;
+        return {
+            registrationTax, inscriptionFee, honoraires, tva,
+            admin, dossierBank,
+            total: registrationTax + inscriptionFee + honoraires + tva + admin + dossierBank
+        };
     }
 
-    function calcDossierFees() {
-        return 500;
+    // ─── ASRD Toggle ──────────────────────────────────────
+    function toggleASRD() {
+        const panel = document.getElementById('asrdPanel');
+        const enabled = document.getElementById('asrdEnabled').checked;
+        if (enabled) {
+            panel.classList.remove('hidden');
+        } else {
+            panel.classList.add('hidden');
+        }
+        calculate();
+    }
+
+    // ─── ASRD Calculation ─────────────────────────────────
+    function calcASRD(loanAmount, durationYears, age, isSmoker, coverage) {
+        // Prime unique estimée en % du capital (marché belge)
+        // Basé sur les tarifs moyens AG Insurance / Ethias / AXA
+        let baseRate;
+        if (age <= 25)      baseRate = 0.025;
+        else if (age <= 30) baseRate = 0.035;
+        else if (age <= 35) baseRate = 0.050;
+        else if (age <= 40) baseRate = 0.070;
+        else if (age <= 45) baseRate = 0.095;
+        else if (age <= 50) baseRate = 0.135;
+        else if (age <= 55) baseRate = 0.190;
+        else if (age <= 60) baseRate = 0.270;
+        else                baseRate = 0.350;
+
+        // Majoration fumeur : +60%
+        if (isSmoker) baseRate *= 1.60;
+
+        // Ajustement durée (normalisé sur 20 ans)
+        baseRate *= (0.70 + 0.30 * (durationYears / 20));
+
+        // Appliquer la couverture
+        baseRate *= coverage;
+
+        const singlePremium = loanAmount * baseRate;
+        const monthlyEquivalent = singlePremium / (durationYears * 12);
+
+        return { singlePremium, monthlyEquivalent };
     }
 
     // ─── Extras Panel Toggle ──────────────────────────────
@@ -498,15 +647,23 @@
         document.getElementById('rateDisplay').textContent = rate.toFixed(2).replace('.', ',') + '%';
         document.getElementById('durationDisplay').textContent = years + ' ans';
 
-        // Fees
+        // ── Frais d'achat (acte de vente) ──────────────────
         const registrationFees = calcRegistrationFees(price, region);
-        const notaryFees = calcNotaryFees(price);
-        const creditDeedFees = calcCreditDeedFees();
-        const dossierFees = calcDossierFees();
-        const totalFees = registrationFees + notaryFees + creditDeedFees + dossierFees;
+        const notary = calcNotaryFees(price);
+        const purchaseFees = registrationFees + notary.total;
 
-        // Financing need
-        const financingNeed = Math.max(0, price + totalFees - downPayment);
+        // ── Calcul itératif (frais hypothécaires dépendent du montant emprunté)
+        let loanAmount = Math.max(0, price + purchaseFees - downPayment);
+        let mortgage = calcMortgageDeedFees(loanAmount);
+        for (let i = 0; i < 3; i++) {
+            loanAmount = Math.max(0, price + purchaseFees + mortgage.total - downPayment);
+            mortgage = calcMortgageDeedFees(loanAmount);
+        }
+        const totalFees = purchaseFees + mortgage.total;
+        const financingNeed = loanAmount;
+
+        // ── Quotité (LTV) ────────────────────────────────
+        const ltv = price > 0 ? (financingNeed / price) * 100 : 0;
 
         // Monthly payment calculation
         const P = financingNeed;
@@ -519,27 +676,66 @@
             monthly = P / n;
         }
 
-        // Ratios
-        const debtRatio = income > 0 ? (monthly / income) * 100 : 0;
-        const remaining = income - monthly;
+        // ── ASRD ─────────────────────────────────────────
+        const asrdEnabled = document.getElementById('asrdEnabled')?.checked || false;
+        let asrd = { singlePremium: 0, monthlyEquivalent: 0 };
+        if (asrdEnabled && P > 0) {
+            const age = parseInt(document.getElementById('asrdAge')?.value) || 30;
+            const isSmoker = document.getElementById('asrdSmoker')?.checked || false;
+            const coverage = parseFloat(document.getElementById('asrdCoverage')?.value) || 1;
+            asrd = calcASRD(P, years, age, isSmoker, coverage);
+            document.getElementById('asrdSinglePremium').textContent = fmt(asrd.singlePremium);
+            document.getElementById('asrdMonthlyDisplay').textContent = fmt(asrd.monthlyEquivalent) + '/mois';
+        }
+        const monthlyTotal = monthly + asrd.monthlyEquivalent;
+
+        // Ratios (with ASRD included)
+        const debtRatio = income > 0 ? (monthlyTotal / income) * 100 : 0;
+        const remaining = income - monthlyTotal;
         const totalCredit = (monthly * n) - P;
 
         // Update results
-        document.getElementById('monthlyResult').textContent = fmt(monthly);
+        if (asrdEnabled && asrd.monthlyEquivalent > 0) {
+            document.getElementById('monthlyResult').innerHTML = fmt(monthlyTotal) + `<span class="text-xs text-gray-500 block">(dont ASRD ${fmt(asrd.monthlyEquivalent)})</span>`;
+        } else {
+            document.getElementById('monthlyResult').textContent = fmt(monthly);
+        }
         document.getElementById('remainResult').textContent = fmt(remaining);
         document.getElementById('financingNeed').textContent = fmtShort(financingNeed);
         document.getElementById('totalCost').textContent = fmtShort(totalCredit);
-        document.getElementById('regFees').textContent = fmtShort(registrationFees);
+
+        // LTV display with color coding
+        const ltvEl = document.getElementById('ltvDisplay');
+        ltvEl.textContent = ltv.toFixed(0).replace('.', ',') + '%';
+        ltvEl.classList.remove('text-green-400', 'text-orange-400', 'text-red-400', 'text-white');
+        if (ltv <= 80) {
+            ltvEl.classList.add('text-green-400');
+        } else if (ltv <= 90) {
+            ltvEl.classList.add('text-orange-400');
+        } else {
+            ltvEl.classList.add('text-red-400');
+        }
+
         document.getElementById('totalFees').textContent = fmtShort(totalFees);
 
         // Feasibility
         updateFeasibility(debtRatio, remaining);
 
-        // Chart
-        updateChart(P, totalCredit, totalFees);
+        // Chart (include ASRD in interest section for visual)
+        const asrdTotal = asrd.singlePremium;
+        updateChart(P, totalCredit, totalFees, asrdTotal);
+
+        // Store last result for scenario saving
+        lastCalcResult = {
+            price, downPayment: downPayment, rate: effectiveRate, years, peb: pebScore, region,
+            monthly, monthlyASRD: asrd.monthlyEquivalent, monthlyTotal,
+            debtRatio, remaining, ltv, financingNeed, totalFees, totalCredit,
+            asrdEnabled, asrdSingle: asrd.singlePremium,
+            totalOperation: price + totalFees + totalCredit + asrdTotal
+        };
 
         // Fee breakdown
-        updateFeeBreakdown(registrationFees, notaryFees, creditDeedFees, dossierFees, totalFees, price, financingNeed, monthly, n, totalCredit, effectiveRate, debtRatio, remaining);
+        updateFeeBreakdown({ registrationFees, notary, mortgage, totalFees, price, financingNeed, monthly, monthlyTotal, asrd, asrdEnabled, n, totalCredit, effectiveRate, debtRatio, remaining, ltv });
     }
 
     // ─── Feasibility Gauge ────────────────────────────────
@@ -589,13 +785,16 @@
     }
 
     // ─── Chart ────────────────────────────────────────────
-    function updateChart(capital, interest, fees) {
-        const data = [capital, interest, fees];
-        const labels = ['Capital emprunté', 'Intérêts', 'Frais (notaire, enreg…)'];
-        const colors = ['#6366f1', '#f59e0b', '#ec4899'];
+    function updateChart(capital, interest, fees, asrdTotal = 0) {
+        const hasASRD = asrdTotal > 0;
+        const data = hasASRD ? [capital, interest, fees, asrdTotal] : [capital, interest, fees];
+        const labels = hasASRD ? ['Capital emprunté', 'Intérêts', 'Frais (notaire, enreg…)', 'Assurance SRD'] : ['Capital emprunté', 'Intérêts', 'Frais (notaire, enreg…)'];
+        const colors = hasASRD ? ['#6366f1', '#f59e0b', '#ec4899', '#14b8a6'] : ['#6366f1', '#f59e0b', '#ec4899'];
 
         if (chart) {
+            chart.data.labels = labels;
             chart.data.datasets[0].data = data;
+            chart.data.datasets[0].backgroundColor = colors;
             chart.update();
         } else {
             const ctx = document.getElementById('costChart').getContext('2d');
@@ -657,91 +856,255 @@
     }
 
     // ─── Fee Breakdown ────────────────────────────────────
-    function updateFeeBreakdown(regFees, notaryFees, creditDeed, dossier, totalFees, price, financingNeed, monthly, n, totalCredit, effectiveRate, debtRatio, remaining) {
+    function updateFeeBreakdown(d) {
         const el = document.getElementById('feeBreakdown');
         const regionLabel = region === 'bruxelles' ? 'Bruxelles' : 'Wallonie';
+        const bc = isDark ? 'border-gray-800' : 'border-gray-200';
+        const bc2 = isDark ? 'border-gray-700' : 'border-gray-300';
 
         let regExplanation = '';
         if (region === 'wallonie') {
-            regExplanation = '3% (taux réduit habitation propre et unique)';
+            regExplanation = '3% (taux réduit hab. propre et unique)';
         } else {
-            if (price <= 600000) {
-                regExplanation = `12,5% avec abattement (0% sur les premiers 200 000 €)`;
-            } else {
-                regExplanation = `12,5% sans abattement (prix > 600 000 €)`;
-            }
+            regExplanation = d.price <= 600000
+                ? '12,5% avec abattement (0% sur premiers 200k€)'
+                : '12,5% sans abattement (prix > 600k€)';
+        }
+
+        // LTV warning
+        let ltvWarning = '';
+        if (d.ltv > 100) {
+            ltvWarning = `<div class="mt-3 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-xs text-red-400">⚠️ Quotité de ${d.ltv.toFixed(0)}% — La plupart des banques belges refusent au-delà de 100%. Augmentez votre apport.</div>`;
+        } else if (d.ltv > 90) {
+            ltvWarning = `<div class="mt-3 rounded-lg bg-orange-500/10 border border-orange-500/30 px-3 py-2 text-xs text-orange-400">⚠️ Quotité de ${d.ltv.toFixed(0)}% — Au-delà de 90%, les banques exigent souvent un taux plus élevé et des garanties supplémentaires.</div>`;
+        } else if (d.ltv > 80) {
+            ltvWarning = `<div class="mt-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 text-xs text-yellow-400">💡 Quotité de ${d.ltv.toFixed(0)}% — Correct pour un premier achat. En-dessous de 80% vous obtiendrez de meilleures conditions.</div>`;
         }
 
         el.innerHTML = `
-            <div class="flex justify-between py-2 border-b border-gray-800 dark:border-gray-800">
+            <p class="text-xs text-gray-500 mb-3 leading-relaxed">📐 Frais calculés selon le barème dégressif notarial belge (AR 1950) + TVA 21%</p>
+
+            <div class="text-xs font-semibold text-brand-400 uppercase tracking-wider mb-2 mt-1">Acte de vente</div>
+            <div class="flex justify-between py-2 ${bc} border-b">
                 <span class="text-gray-400">Région</span>
                 <span class="font-medium">${regionLabel}</span>
             </div>
-            <div class="flex justify-between py-2 border-b border-gray-800 dark:border-gray-800">
-                <span class="text-gray-400">Frais d'enregistrement <span class="text-xs">(${regExplanation})</span></span>
-                <span class="font-medium result-value">${fmt(regFees)}</span>
+            <div class="flex justify-between py-2 ${bc} border-b">
+                <span class="text-gray-400">Droits d'enregistrement <span class="text-xs">(${regExplanation})</span></span>
+                <span class="font-medium result-value">${fmt(d.registrationFees)}</span>
             </div>
-            <div class="flex justify-between py-2 border-b border-gray-800 dark:border-gray-800">
-                <span class="text-gray-400">Honoraires de notaire <span class="text-xs">(~1,1% du prix)</span></span>
-                <span class="font-medium result-value">${fmt(notaryFees)}</span>
+            <div class="flex justify-between py-2 ${bc} border-b">
+                <span class="text-gray-400">Honoraires notaire <span class="text-xs">(barème dégressif)</span></span>
+                <span class="font-medium result-value">${fmt(d.notary.honoraires)}</span>
             </div>
-            <div class="flex justify-between py-2 border-b border-gray-800 dark:border-gray-800">
-                <span class="text-gray-400">Frais d'acte de crédit <span class="text-xs">(forfait)</span></span>
-                <span class="font-medium result-value">${fmt(creditDeed)}</span>
+            <div class="flex justify-between py-2 ${bc} border-b">
+                <span class="text-gray-400">TVA 21% sur honoraires</span>
+                <span class="font-medium result-value">${fmt(d.notary.tva)}</span>
             </div>
-            <div class="flex justify-between py-2 border-b border-gray-800 dark:border-gray-800">
-                <span class="text-gray-400">Frais de dossier <span class="text-xs">(forfait)</span></span>
-                <span class="font-medium result-value">${fmt(dossier)}</span>
+            <div class="flex justify-between py-2 ${bc} border-b">
+                <span class="text-gray-400">Frais administratifs & recherches</span>
+                <span class="font-medium result-value">${fmt(d.notary.admin)}</span>
             </div>
-            <div class="flex justify-between py-2 border-b border-gray-800 dark:border-gray-800 font-semibold">
+
+            <div class="text-xs font-semibold text-brand-400 uppercase tracking-wider mb-2 mt-4">Acte hypothécaire</div>
+            <div class="flex justify-between py-2 ${bc} border-b">
+                <span class="text-gray-400">Droit d'enregistrement <span class="text-xs">(1% du prêt)</span></span>
+                <span class="font-medium result-value">${fmt(d.mortgage.registrationTax)}</span>
+            </div>
+            <div class="flex justify-between py-2 ${bc} border-b">
+                <span class="text-gray-400">Droit d'inscription hypothécaire <span class="text-xs">(0,3%)</span></span>
+                <span class="font-medium result-value">${fmt(d.mortgage.inscriptionFee)}</span>
+            </div>
+            <div class="flex justify-between py-2 ${bc} border-b">
+                <span class="text-gray-400">Honoraires notaire (acte crédit)</span>
+                <span class="font-medium result-value">${fmt(d.mortgage.honoraires)}</span>
+            </div>
+            <div class="flex justify-between py-2 ${bc} border-b">
+                <span class="text-gray-400">TVA 21% sur honoraires crédit</span>
+                <span class="font-medium result-value">${fmt(d.mortgage.tva)}</span>
+            </div>
+            <div class="flex justify-between py-2 ${bc} border-b">
+                <span class="text-gray-400">Frais admin. acte crédit</span>
+                <span class="font-medium result-value">${fmt(d.mortgage.admin)}</span>
+            </div>
+            <div class="flex justify-between py-2 ${bc} border-b">
+                <span class="text-gray-400">Frais de dossier bancaire</span>
+                <span class="font-medium result-value">${fmt(d.mortgage.dossierBank)}</span>
+            </div>
+
+            <div class="flex justify-between py-2 ${bc} border-b font-semibold mt-2">
                 <span>Total des frais</span>
-                <span class="text-brand-400 result-value">${fmt(totalFees)}</span>
+                <span class="text-brand-400 result-value">${fmt(d.totalFees)}</span>
             </div>
-            <div class="mt-3 pt-3 border-t border-gray-700">
+
+            ${ltvWarning}
+
+            <div class="mt-4 pt-3 ${bc2} border-t">
+                <div class="text-xs font-semibold text-brand-400 uppercase tracking-wider mb-2">Résumé du crédit</div>
                 <div class="flex justify-between py-1">
                     <span class="text-gray-400">Prix du bien</span>
-                    <span class="font-medium result-value">${fmt(price)}</span>
+                    <span class="font-medium result-value">${fmt(d.price)}</span>
+                </div>
+                <div class="flex justify-between py-1">
+                    <span class="text-gray-400">Quotité (LTV)</span>
+                    <span class="font-medium ${d.ltv > 90 ? 'text-red-400' : d.ltv > 80 ? 'text-orange-400' : 'text-green-400'}">${d.ltv.toFixed(1).replace('.', ',')}%</span>
                 </div>
                 <div class="flex justify-between py-1">
                     <span class="text-gray-400">Taux effectif</span>
-                    <span class="font-medium">${effectiveRate.toFixed(2).replace('.', ',')}%</span>
+                    <span class="font-medium">${d.effectiveRate.toFixed(2).replace('.', ',')}%</span>
                 </div>
                 <div class="flex justify-between py-1">
                     <span class="text-gray-400">Capital emprunté</span>
-                    <span class="font-medium result-value">${fmt(financingNeed)}</span>
+                    <span class="font-medium result-value">${fmt(d.financingNeed)}</span>
                 </div>
                 <div class="flex justify-between py-1">
                     <span class="text-gray-400">Nombre de mensualités</span>
-                    <span class="font-medium">${n}</span>
+                    <span class="font-medium">${d.n}</span>
                 </div>
                 <div class="flex justify-between py-1">
                     <span class="text-gray-400">Coût total des intérêts</span>
-                    <span class="font-medium result-value">${fmt(totalCredit)}</span>
+                    <span class="font-medium result-value">${fmt(d.totalCredit)}</span>
                 </div>
-                <div class="flex justify-between py-1 font-semibold text-base mt-2 pt-2 border-t border-gray-700">
+                ${d.asrdEnabled ? `
+                <div class="flex justify-between py-1">
+                    <span class="text-gray-400">Assurance solde restant dû <span class="text-xs">(prime unique)</span></span>
+                    <span class="font-medium text-teal-400 result-value">${fmt(d.asrd.singlePremium)}</span>
+                </div>
+                <div class="flex justify-between py-1">
+                    <span class="text-gray-400">Mensualité crédit + ASRD</span>
+                    <span class="font-medium result-value">${fmt(d.monthlyTotal)}</span>
+                </div>
+                ` : ''}
+                <div class="flex justify-between py-1 font-semibold text-base mt-2 pt-2 ${bc2} border-t">
                     <span>Coût total de l'opération</span>
-                    <span class="text-brand-400 result-value">${fmt(price + totalFees + totalCredit)}</span>
+                    <span class="text-brand-400 result-value">${fmt(d.price + d.totalFees + d.totalCredit + (d.asrdEnabled ? d.asrd.singlePremium : 0))}</span>
                 </div>
             </div>
         `;
+    }
 
-        // Fix borders for light mode
-        if (!isDark) {
-            el.querySelectorAll('.border-gray-800').forEach(e => {
-                e.classList.remove('border-gray-800');
-                e.classList.add('border-gray-200');
-            });
-            el.querySelectorAll('.border-gray-700').forEach(e => {
-                e.classList.remove('border-gray-700');
-                e.classList.add('border-gray-300');
-            });
+    // ─── Scenarios ────────────────────────────────────────
+    const scenarioColors = ['#6366f1', '#f59e0b', '#ec4899'];
+    const scenarioLabels = ['A', 'B', 'C'];
+
+    function saveScenario() {
+        if (!lastCalcResult) return;
+        if (savedScenarios.length >= 3) {
+            // Replace oldest
+            savedScenarios.shift();
+        }
+        const s = { ...lastCalcResult, id: Date.now() };
+        savedScenarios.push(s);
+        renderScenarios();
+    }
+
+    function removeScenario(id) {
+        savedScenarios = savedScenarios.filter(s => s.id !== id);
+        renderScenarios();
+    }
+
+    function clearScenarios() {
+        savedScenarios = [];
+        renderScenarios();
+    }
+
+    function renderScenarios() {
+        const section = document.getElementById('scenarioSection');
+        const grid = document.getElementById('scenarioGrid');
+        const table = document.getElementById('scenarioTable');
+        const clearBtn = document.getElementById('clearScenariosBtn');
+
+        if (savedScenarios.length === 0) {
+            section.classList.add('hidden');
+            clearBtn.classList.add('hidden');
+            return;
+        }
+
+        section.classList.remove('hidden');
+        clearBtn.classList.remove('hidden');
+        const bc = isDark ? 'border-gray-700' : 'border-gray-300';
+        const bg = isDark ? 'bg-gray-800' : 'bg-gray-100';
+        const bgCard = isDark ? 'bg-gray-800/60' : 'bg-gray-100/60';
+
+        // Scenario cards
+        grid.style.gridTemplateColumns = `repeat(${savedScenarios.length}, minmax(0, 1fr))`;
+        grid.innerHTML = savedScenarios.map((s, i) => {
+            const color = scenarioColors[i % 3];
+            const label = scenarioLabels[i % 3];
+            const debtColor = s.debtRatio < 35 ? 'text-green-400' : s.debtRatio <= 45 ? 'text-orange-400' : 'text-red-400';
+            const ltvColor = s.ltv <= 80 ? 'text-green-400' : s.ltv <= 90 ? 'text-orange-400' : 'text-red-400';
+            return `
+                <div class="scenario-card rounded-xl ${bgCard} border ${bc} p-4 relative">
+                    <button onclick="removeScenario(${s.id})" class="scenario-remove absolute top-2 right-2 w-6 h-6 rounded-full bg-gray-700 hover:bg-red-500 text-gray-400 hover:text-white flex items-center justify-center text-xs transition-colors">&times;</button>
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="scenario-badge text-white" style="background:${color}">${label}</span>
+                        <span class="text-sm font-semibold">${fmtShort(s.price)}</span>
+                        <span class="text-xs text-gray-500">${s.region === 'bruxelles' ? 'BXL' : 'WAL'}</span>
+                    </div>
+                    <div class="space-y-1.5 text-xs">
+                        <div class="flex justify-between"><span class="text-gray-400">Mensualité</span><span class="font-semibold result-value">${fmt(s.monthlyTotal)}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">Taux</span><span class="font-medium">${s.rate.toFixed(2).replace('.', ',')}%</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">Durée</span><span class="font-medium">${s.years} ans</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">Endettement</span><span class="font-medium ${debtColor}">${s.debtRatio.toFixed(1).replace('.', ',')}%</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">LTV</span><span class="font-medium ${ltvColor}">${s.ltv.toFixed(0)}%</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">PEB</span><span class="font-medium">${s.peb}</span></div>
+                        ${s.asrdEnabled ? `<div class="flex justify-between"><span class="text-gray-400">ASRD/mois</span><span class="font-medium text-teal-400 result-value">${fmt(s.monthlyASRD)}</span></div>` : ''}
+                    </div>
+                    <div class="mt-3 pt-2 ${bc} border-t">
+                        <div class="flex justify-between text-xs"><span class="text-gray-400">Coût total</span><span class="font-bold text-brand-400 result-value">${fmtShort(s.totalOperation)}</span></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Comparison table
+        if (savedScenarios.length >= 2) {
+            const rows = [
+                { label: 'Prix', key: s => fmt(s.price) },
+                { label: 'Apport', key: s => fmt(s.downPayment) },
+                { label: 'Taux effectif', key: s => s.rate.toFixed(2).replace('.', ',') + '%' },
+                { label: 'Durée', key: s => s.years + ' ans' },
+                { label: 'Mensualité totale', key: s => fmt(s.monthlyTotal), bold: true },
+                { label: 'Reste à vivre', key: s => fmt(s.remaining) },
+                { label: 'Endettement', key: s => { const v = s.debtRatio.toFixed(1).replace('.',',')+'%'; const c = s.debtRatio<35?'text-green-400':s.debtRatio<=45?'text-orange-400':'text-red-400'; return `<span class="${c}">${v}</span>`; } },
+                { label: 'Quotité (LTV)', key: s => { const v = s.ltv.toFixed(0)+'%'; const c = s.ltv<=80?'text-green-400':s.ltv<=90?'text-orange-400':'text-red-400'; return `<span class="${c}">${v}</span>`; } },
+                { label: 'Frais totaux', key: s => fmt(s.totalFees) },
+                { label: 'Coût intérêts', key: s => fmt(s.totalCredit) },
+                { label: 'ASRD (prime)', key: s => s.asrdEnabled ? fmt(s.asrdSingle) : '—' },
+                { label: 'Coût total opération', key: s => fmt(s.totalOperation), bold: true },
+            ];
+
+            // Find best values for highlighting
+            const bestMonthly = Math.min(...savedScenarios.map(s => s.monthlyTotal));
+            const bestTotal = Math.min(...savedScenarios.map(s => s.totalOperation));
+
+            table.innerHTML = `
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="${bc} border-b">
+                            <th class="text-left py-2 text-gray-500 font-medium pr-4"></th>
+                            ${savedScenarios.map((s, i) => `<th class="text-right py-2 px-2"><span class="scenario-badge text-white text-xs" style="background:${scenarioColors[i]}">${scenarioLabels[i]}</span></th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(row => `
+                            <tr class="${bc} border-b">
+                                <td class="py-1.5 text-gray-400 pr-4 ${row.bold ? 'font-semibold' : ''}">${row.label}</td>
+                                ${savedScenarios.map(s => `<td class="text-right py-1.5 px-2 result-value ${row.bold ? 'font-semibold' : ''}">${row.key(s)}</td>`).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <p class="text-xs text-gray-500 mt-3">💡 Astuce : modifiez les paramètres et sauvegardez un nouveau scénario pour comparer.</p>
+            `;
+        } else {
+            table.innerHTML = '<p class="text-xs text-gray-500 mt-2">Sauvegardez au moins 2 scénarios pour les comparer.</p>';
         }
     }
 
     // ─── Init ─────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
-        // Set initial region toggle state
-        document.getElementById('regionToggle').classList.add('active');
+        // Wallonie par défaut → toggle NOT active (active = Bruxelles)
         calculate();
     });
 </script>
