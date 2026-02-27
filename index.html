@@ -201,7 +201,7 @@
                                 </div>
                             </div>
                             <div>
-                                <label class="text-xs text-gray-400 block mb-1">Bonus annuel <span class="text-gray-600">(~60% pris)</span></label>
+                                <label class="text-xs text-gray-400 block mb-1">Bonus annuel <span class="text-gray-600">(~50% pris)</span></label>
                                 <div class="relative">
                                     <input type="number" id="bonusAnnual" value="0" min="0" step="100"
                                         class="w-full px-3 py-2 pr-8 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -210,10 +210,19 @@
                                 </div>
                             </div>
                         </div>
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">Chèques repas <span class="text-gray-600">(€/jour, part patronale)</span></label>
+                            <div class="relative">
+                                <input type="number" id="mealVouchers" value="0" min="0" max="8" step="0.5"
+                                    class="w-full px-3 py-2 pr-8 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                    oninput="calculate()">
+                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">€/j</span>
+                            </div>
+                        </div>
                         <div class="flex items-center gap-3 mt-1">
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" id="companyCar" class="w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800" onchange="calculate()">
-                                <span class="text-xs text-gray-400">Voiture de société <span class="text-gray-600">(+450 €/mois de reste à vivre)</span></span>
+                                <span class="text-xs text-gray-400">Voiture de société <span class="text-gray-600">(+200 €/mois, non garanti)</span></span>
                             </label>
                         </div>
                         <div class="mt-2 rounded-lg bg-brand-500/10 border border-brand-500/20 px-3 py-2">
@@ -707,20 +716,34 @@
         const bonus13 = parseFloat(document.getElementById('bonus13')?.value) || 0;
         const bonusAnnual = parseFloat(document.getElementById('bonusAnnual')?.value) || 0;
         const hasCar = document.getElementById('companyCar')?.checked || false;
+        const mealVoucherDay = parseFloat(document.getElementById('mealVouchers')?.value) || 0;
 
         // 13ème mois : lissé sur 12 mois (100%)
         const monthly13 = bonus13 / 12;
-        // Bonus annuel : banques prennent ~60%, lissé sur 12 mois
-        const monthlyBonus = (bonusAnnual * 0.6) / 12;
-        // Voiture de société : +450€ de reste à vivre estimé
-        const carBonus = hasCar ? 450 : 0;
+        // Bonus annuel : banques prennent ~50% (moyenne marché), lissé sur 12 mois
+        const monthlyBonus = (bonusAnnual * 0.50) / 12;
+        // Voiture de société : ~200€/mois (valeur conservative, non garanti par toutes les banques)
+        const carBonus = hasCar ? 200 : 0;
+        // Chèques repas : part patronale × ~20 jours ouvrables (accepté KBC, ING, BNP…)
+        const monthlyMealVouchers = mealVoucherDay * 20;
 
-        const adjusted = baseIncome + monthly13 + monthlyBonus + carBonus;
+        const adjusted = baseIncome + monthly13 + monthlyBonus + carBonus + monthlyMealVouchers;
 
         const display = document.getElementById('adjustedIncomeDisplay');
         if (display) display.textContent = fmt(Math.round(adjusted)) + '/mois';
 
         return adjusted;
+    }
+
+    // ─── Adaptive Debt Ratio Thresholds ───────────────────
+    // Les banques belges adaptent le seuil d'endettement selon le revenu :
+    // plus le revenu est élevé, plus le reste à vivre est confortable même
+    // avec un ratio plus haut. Source : pratique BNP, KBC, ING, Belfius.
+    function getDebtThresholds(monthlyIncome) {
+        if (monthlyIncome >= 6000) return { green: 45, orange: 50, minRemaining: 1200 };
+        if (monthlyIncome >= 4000) return { green: 42, orange: 48, minRemaining: 1400 };
+        if (monthlyIncome >= 2500) return { green: 38, orange: 45, minRemaining: 1500 };
+        return { green: 33, orange: 40, minRemaining: 1500 };
     }
 
     // ─── Main Calculation ─────────────────────────────────
@@ -819,8 +842,8 @@
 
         document.getElementById('totalFees').textContent = fmtShort(totalFees);
 
-        // Feasibility
-        updateFeasibility(debtRatio, remaining);
+        // Feasibility (adaptive thresholds based on income)
+        updateFeasibility(debtRatio, remaining, income);
 
         // Chart (include ASRD in interest section for visual)
         const asrdTotal = asrd.singlePremium;
@@ -845,8 +868,9 @@
         updateAllFilledTracks();
     }
 
-    // ─── Feasibility Gauge ────────────────────────────────
-    function updateFeasibility(debtRatio, remaining) {
+    // ─── Feasibility Gauge (adaptive) ─────────────────────
+    function updateFeasibility(debtRatio, remaining, income) {
+        const thresholds = getDebtThresholds(income);
         const ring = document.getElementById('gaugeRing');
         const circumference = 2 * Math.PI * 58; // ~364.42
         const pct = Math.min(debtRatio, 60);
@@ -864,21 +888,23 @@
         ring.removeAttribute('stroke');
         card.classList.remove('border-green-500/30', 'border-orange-500/30', 'border-red-500/30');
 
-        if (debtRatio < 35 && remaining > 1500) {
+        const thresholdNote = `(seuil adapté : ${thresholds.green}% pour vos revenus)`;
+
+        if (debtRatio < thresholds.green && remaining > thresholds.minRemaining) {
             ring.setAttribute('stroke', '#22c55e');
             percentEl.classList.remove('text-orange-400', 'text-red-400');
             percentEl.classList.add('text-green-400');
             label.textContent = '✅ Projet réalisable';
             label.className = 'text-lg font-bold mb-1 text-green-400';
-            desc.textContent = `Votre taux d'endettement de ${debtRatio.toFixed(1).replace('.', ',')}% est sous le seuil de 35% et votre reste à vivre de ${fmt(remaining)} est confortable.`;
+            desc.textContent = `Endettement de ${debtRatio.toFixed(1).replace('.', ',')}% — sous le seuil de ${thresholds.green}% ${thresholdNote}. Reste à vivre : ${fmt(remaining)}.`;
             card.classList.add('border-green-500/30');
-        } else if (debtRatio <= 45) {
+        } else if (debtRatio <= thresholds.orange) {
             ring.setAttribute('stroke', '#f59e0b');
             percentEl.classList.remove('text-green-400', 'text-red-400');
             percentEl.classList.add('text-orange-400');
             label.textContent = '⚠️ Projet tendu';
             label.className = 'text-lg font-bold mb-1 text-orange-400';
-            desc.textContent = `Endettement de ${debtRatio.toFixed(1).replace('.', ',')}%. La banque pourrait exiger des garanties supplémentaires. Reste à vivre : ${fmt(remaining)}.`;
+            desc.textContent = `Endettement de ${debtRatio.toFixed(1).replace('.', ',')}% ${thresholdNote}. La banque pourrait exiger des garanties supplémentaires. Reste à vivre : ${fmt(remaining)}.`;
             card.classList.add('border-orange-500/30');
         } else {
             ring.setAttribute('stroke', '#ef4444');
@@ -886,7 +912,7 @@
             percentEl.classList.add('text-red-400');
             label.textContent = '🚫 Projet à risque';
             label.className = 'text-lg font-bold mb-1 text-red-400';
-            desc.textContent = `Endettement de ${debtRatio.toFixed(1).replace('.', ',')}% — trop élevé. Réduisez le prix, augmentez l'apport ou allongez la durée.`;
+            desc.textContent = `Endettement de ${debtRatio.toFixed(1).replace('.', ',')}% — dépasse ${thresholds.orange}% ${thresholdNote}. Réduisez le prix, augmentez l'apport ou allongez la durée.`;
             card.classList.add('border-red-500/30');
         }
     }
