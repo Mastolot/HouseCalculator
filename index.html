@@ -453,6 +453,222 @@
     <!-- Toast container -->
     <div id="toastContainer"></div>
 
+    <!-- Checklist Achat -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 mt-10">
+        <div class="rounded-2xl bg-gray-900 border border-gray-800">
+            <button onclick="toggleChecklist()" class="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-gray-800/30 rounded-2xl transition-colors">
+                <div class="flex items-center gap-3">
+                    <span class="text-xl">📋</span>
+                    <h2 class="text-base font-bold text-gray-200">Checklist achat immobilier en Belgique</h2>
+                </div>
+                <svg id="checklistIcon" class="w-5 h-5 text-gray-500 detail-toggle-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div id="checklistPanel" class="hidden px-6 pb-6">
+                <p class="text-xs text-gray-500 mb-5 leading-relaxed">Points essentiels à vérifier avant et pendant l'achat d'un bien en Belgique. Sources : notaire.be, SPW Wallonie, Code civil belge, RGIE.</p>
+
+                <!-- Phase 1: Avant la visite -->
+                <div class="mb-6">
+                    <h3 class="text-xs font-bold text-brand-400 uppercase tracking-wider mb-3">🔍 Avant la visite / Recherche</h3>
+                    <div class="space-y-2">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Définir son budget maximum (simulation ci-dessus !)</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Incluez les frais de notaire, d'enregistrement et le coût de travaux éventuels.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Vérifier la zone d'inondation</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Consultez le <a href="http://geoportail.wallonie.be/walonmap" target="_blank" class="text-brand-400 hover:underline">Géoportail de Wallonie</a> (aléa d'inondation). Certaines assurances refusent les biens en zone à risque.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Comparer plusieurs offres de crédit</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Consultez au moins 3 banques. Les taux et frais de dossier varient significativement. Le courtier en crédit n'est pas payé par vous en Belgique.</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Phase 2: Visite & Documents -->
+                <div class="mb-6">
+                    <h3 class="text-xs font-bold text-brand-400 uppercase tracking-wider mb-3">🏠 Lors des visites</h3>
+                    <div class="space-y-2">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Demander le certificat PEB</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Obligatoire pour toute vente. Doit figurer dans l'annonce. Vérifiez le score (A à G) et l'impact sur la consommation énergétique et sur votre taux bancaire (bonus PEB A/B).</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Vérifier le contrôle de l'installation électrique (RGIE)</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Le vendeur doit fournir une attestation de conformité électrique. Si non-conforme, l'acheteur a 18 mois pour mettre aux normes. Coût moyen de mise en conformité : 3 000 – 10 000 €.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Citerne à mazout : demander l'attestation de contrôle</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Si le bien a une citerne à mazout (enterrée ou aérienne), un contrôle d'étanchéité est obligatoire. Citerne enterrée : test tous les 3 ans en Wallonie. Budget remplacement : 2 000 – 5 000 €.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Vérifier la présence d'amiante</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Pour les bâtiments construits avant 2001. Pas encore obligatoire pour la vente d'une maison en Wallonie (contrairement à la Flandre), mais fortement recommandé. Coût désamiantage toiture : 30 – 60 €/m².</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Demander le précompte immobilier annuel</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Taxe foncière annuelle (régionale + communale). En Wallonie, comptez généralement entre 800 et 2 500 €/an selon la commune et le revenu cadastral.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Copropriété : demander les PV des 3 dernières AG</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Vérifiez les travaux votés, le fonds de réserve, les charges courantes et les litiges éventuels. Le syndic doit fournir ces documents.</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Phase 3: Offre & Compromis -->
+                <div class="mb-6">
+                    <h3 class="text-xs font-bold text-brand-400 uppercase tracking-wider mb-3">📝 Offre & Compromis de vente</h3>
+                    <div class="space-y-2">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">L'offre d'achat vous engage juridiquement</span>
+                                <p class="text-xs text-gray-500 mt-0.5">En droit belge, une offre d'achat acceptée par le vendeur vaut vente. Incluez toujours une condition suspensive d'obtention de crédit et un délai de validité.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Condition suspensive d'obtention du crédit</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Indispensable ! Prévoyez un délai de 45 à 60 jours. Sans cette clause, vous devez acheter même si la banque refuse le prêt. Faites rédiger le compromis par votre notaire (service gratuit).</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Acompte de 5 à 10% au compromis</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Versé sur le compte tiers du notaire (pas au vendeur directement). Cet argent doit être disponible au moment de la signature du compromis.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Renseignements urbanistiques</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Le notaire les demande à la commune. Vérifiez : permis d'urbanisme en ordre, pas d'infraction, pas de plan d'expropriation. Demandez aussi les éventuelles servitudes (droit de passage, etc.).</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Attestation de sol (BDES / Bruxelles Envir.)</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Obligatoire dans les 3 régions. En Wallonie, le notaire consulte la Banque de Données de l'État des Sols (BDES). Vérifie si le terrain est pollué ou en cours de traitement.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">DIU — Dossier d'Intervention Ultérieure</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Obligatoire depuis 2001. Recense tous les travaux réalisés (plans, matériaux, câblages). Le vendeur doit le transmettre ; s'il n'existe pas, un coordinateur sécurité doit l'établir.</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Phase 4: Crédit & Acte -->
+                <div class="mb-6">
+                    <h3 class="text-xs font-bold text-brand-400 uppercase tracking-wider mb-3">🏦 Crédit & Acte authentique</h3>
+                    <div class="space-y-2">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Délai de réflexion de 14 jours minimum</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Loi sur le crédit hypothécaire : après réception de l'offre de la banque, vous avez au moins 14 jours pour l'accepter ou la refuser. Ne signez pas sous pression.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Négocier les frais de dossier bancaire</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Les frais de dossier (250 – 500 €) sont souvent négociables, surtout si vous domiciliez votre salaire. Demandez aussi si l'assurance incendie groupée offre un avantage sur le taux.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Assurance incendie obligatoire</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Obligatoire pour tout crédit hypothécaire. Comparez les primes (Ethias, AG, AXA…). La banque peut exiger que vous la prenez chez eux, mais vous êtes libre de choisir après la 1ère année.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Acte authentique dans les ~4 mois</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Signé chez le notaire, c'est le transfert officiel de propriété. Le notaire perçoit les fonds, paie les droits d'enregistrement au fisc et inscrit l'hypothèque. Vous pouvez choisir votre propre notaire (sans surcoût).</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Phase 5: Après l'achat -->
+                <div>
+                    <h3 class="text-xs font-bold text-brand-400 uppercase tracking-wider mb-3">🔑 Après l'achat</h3>
+                    <div class="space-y-2">
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Changement de domicile à la commune</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Obligatoire dans les 8 jours du déménagement. Nécessaire pour la police d'assurance, la régionalisation fiscale et les primes éventuelles.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Transfert des compteurs (eau, gaz, électricité)</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Relevez les index le jour de la remise des clés. Contactez le fournisseur d'énergie et le distributeur d'eau pour le transfert à votre nom.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Mise en conformité électrique (si nécessaire)</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Si l'attestation RGIE mentionne des infractions, vous avez 18 mois à partir de l'acte pour mettre l'installation aux normes et faire repasser le contrôle.</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
+                            <div>
+                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Budget récurrent annuel</span>
+                                <p class="text-xs text-gray-500 mt-0.5">N'oubliez pas : précompte immobilier + assurance incendie + entretien chaudière (annuel, obligatoire) + ramonage + charges copro. Comptez 2 000 – 4 000 €/an minimum.</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-gray-800">
+                    <p class="text-[11px] text-gray-600 leading-relaxed">Sources : <a href="https://www.notaire.be/immobilier/acheter-et-vendre-un-bien-immobilier" target="_blank" class="text-brand-500/60 hover:underline">notaire.be</a> · RGIE (installation électrique) · Code civil belge · SPW Wallonie (BDES, urbanisme) · Loi sur le crédit hypothécaire belge. Cette checklist est indicative et ne remplace pas les conseils de votre notaire.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="text-center py-6 text-xs text-gray-600 border-t border-gray-800/50 mt-10">
         <p>Chièvres — Simulation indicative, ne constitue pas un conseil financier. Données fiscales 2025-2026.</p>
@@ -574,6 +790,14 @@
     function toggleFeeDetail() {
         const panel = document.getElementById('feeDetailPanel');
         const icon = document.getElementById('feeDetailIcon');
+        panel.classList.toggle('hidden');
+        icon.classList.toggle('open');
+    }
+
+    // ─── Checklist Toggle ─────────────────────────────────
+    function toggleChecklist() {
+        const panel = document.getElementById('checklistPanel');
+        const icon = document.getElementById('checklistIcon');
         panel.classList.toggle('hidden');
         icon.classList.toggle('open');
     }
