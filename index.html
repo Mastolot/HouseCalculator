@@ -133,6 +133,12 @@
                     <span id="labelBruxelles" class="font-medium text-gray-400">Bruxelles</span>
                 </div>
                 <div class="w-px h-6 bg-gray-700 hidden sm:block"></div>
+                <!-- Hab. propre toggle -->
+                <label class="flex items-center gap-1.5 cursor-pointer region-row" title="Habitation propre et unique = taux réduit de droits d'enregistrement">
+                    <input type="checkbox" id="habPropreCheck" checked class="w-3.5 h-3.5 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800" onchange="toggleHabPropre()">
+                    <span class="text-xs text-gray-300 whitespace-nowrap">Hab. propre</span>
+                </label>
+                <div class="w-px h-6 bg-gray-700 hidden sm:block"></div>
                 <!-- Dark/Light toggle -->
                 <button id="themeBtn" onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-gray-800 transition-colors" title="Changer de thème">
                     <svg id="iconMoon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
@@ -455,6 +461,7 @@
 <script>
     // ─── State ────────────────────────────────────────────
     let region = 'wallonie'; // 'bruxelles' | 'wallonie'
+    let isHabPropre = true; // habitation propre et unique → taux réduit
     let pebScore = 'C';
     let isDark = true;
     let chart = null;
@@ -593,19 +600,34 @@
         return fmt(n);
     }
 
+    // ─── Hab. propre toggle ───────────────────────────────
+    function toggleHabPropre() {
+        isHabPropre = document.getElementById('habPropreCheck').checked;
+        calculate();
+    }
+
     // ─── Fiscal Calculations ──────────────────────────────
-    function calcRegistrationFees(price, region) {
+    function calcRegistrationFees(price, region, habPropre) {
         if (region === 'wallonie') {
-            // 3% taux réduit habitation propre et unique
-            return price * 0.03;
-        } else {
-            // Bruxelles : 12.5%
-            // Abattement : 0% sur les premiers 200k si prix < 600k
-            if (price <= 600000) {
-                // Abattement sur les 200 000 premiers euros
-                const taxable = Math.max(0, price - 200000);
-                return taxable * 0.125;
+            if (habPropre) {
+                // 3% taux réduit habitation propre et unique (réforme janv. 2024)
+                return price * 0.03;
             } else {
+                // 12,5% taux normal (pas hab. propre ou déjà propriétaire)
+                return price * 0.125;
+            }
+        } else {
+            // Bruxelles
+            if (habPropre) {
+                // 12,5% avec abattement : 0% sur les premiers 200k si prix ≤ 600k
+                if (price <= 600000) {
+                    const taxable = Math.max(0, price - 200000);
+                    return taxable * 0.125;
+                } else {
+                    return price * 0.125;
+                }
+            } else {
+                // 12,5% sans abattement (pas hab. propre)
                 return price * 0.125;
             }
         }
@@ -772,7 +794,7 @@
         document.getElementById('durationDisplay').textContent = years + ' ans';
 
         // ── Frais d'achat (acte de vente) ──────────────────
-        const registrationFees = calcRegistrationFees(price, region);
+        const registrationFees = calcRegistrationFees(price, region, isHabPropre);
         const notary = calcNotaryFees(price);
         const purchaseFees = registrationFees + notary.total;
 
@@ -997,11 +1019,17 @@
 
         let regExplanation = '';
         if (region === 'wallonie') {
-            regExplanation = '3% (taux réduit hab. propre et unique)';
+            regExplanation = isHabPropre
+                ? '3% (taux réduit hab. propre et unique)'
+                : '12,5% (taux normal — pas hab. propre)';
         } else {
-            regExplanation = d.price <= 600000
-                ? '12,5% avec abattement (0% sur premiers 200k€)'
-                : '12,5% sans abattement (prix > 600k€)';
+            if (isHabPropre) {
+                regExplanation = d.price <= 600000
+                    ? '12,5% avec abattement (0% sur premiers 200k€)'
+                    : '12,5% sans abattement (prix > 600k€)';
+            } else {
+                regExplanation = '12,5% sans abattement (pas hab. propre)';
+            }
         }
 
         // LTV warning
