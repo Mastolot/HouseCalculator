@@ -175,6 +175,27 @@
                             <span>0 €</span><span>500 000 €</span>
                         </div>
                     </div>
+                    <div class="border-t border-gray-800 mt-4 pt-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-sm font-semibold text-gray-300">Épargne totale</label>
+                        </div>
+                        <div class="relative">
+                            <input type="number" id="totalSavings" value="0" min="0" step="1000"
+                                class="w-full px-4 py-3 pr-12 rounded-xl bg-gray-800 border border-gray-700 text-white text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                                oninput="calculate()">
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">€</span>
+                        </div>
+                        <div id="savingsRemainBox" class="hidden mt-3 rounded-lg px-3 py-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-400">Reste après apport</span>
+                                <span id="savingsRemainDisplay" class="text-sm font-bold result-value">—</span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-1.5 mt-2">
+                                <div id="savingsBar" class="h-1.5 rounded-full transition-all duration-300" style="width:0%"></div>
+                            </div>
+                            <p id="savingsWarning" class="text-xs mt-2 hidden"></p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Revenus nets mensuels -->
@@ -1110,6 +1131,9 @@
         // Sticky mobile bar
         updateStickyBar(monthlyTotal, debtRatio, remaining);
 
+        // Savings remaining
+        updateSavingsRemaining(downPayment);
+
         // Filled range tracks
         updateAllFilledTracks();
     }
@@ -1485,6 +1509,57 @@
             `;
         } else {
             table.innerHTML = '<p class="text-xs text-gray-500 mt-2">Sauvegardez au moins 2 scénarios pour les comparer.</p>';
+        }
+    }
+
+    // ─── Savings Remaining ─────────────────────────────────
+    function updateSavingsRemaining(downPayment) {
+        const totalSavings = parseFloat(document.getElementById('totalSavings').value) || 0;
+        const box = document.getElementById('savingsRemainBox');
+        if (totalSavings <= 0) { box.classList.add('hidden'); return; }
+        box.classList.remove('hidden');
+
+        const remaining = totalSavings - downPayment;
+        const pct = Math.max(0, Math.min(100, (remaining / totalSavings) * 100));
+        const display = document.getElementById('savingsRemainDisplay');
+        const bar = document.getElementById('savingsBar');
+        const warning = document.getElementById('savingsWarning');
+
+        display.textContent = fmt(remaining);
+        bar.style.width = pct + '%';
+
+        // Color coding
+        display.classList.remove('text-green-400', 'text-orange-400', 'text-red-400');
+        bar.classList.remove('bg-green-500', 'bg-orange-500', 'bg-red-500');
+        box.classList.remove('bg-green-500/10', 'border-green-500/20', 'bg-orange-500/10', 'border-orange-500/20', 'bg-red-500/10', 'border-red-500/20');
+        box.classList.remove('border');
+
+        if (remaining < 0) {
+            display.classList.add('text-red-400');
+            bar.classList.add('bg-red-500');
+            box.classList.add('bg-red-500/10', 'border', 'border-red-500/20');
+            warning.classList.remove('hidden');
+            warning.className = 'text-xs mt-2 text-red-400';
+            warning.textContent = '⚠️ Votre apport dépasse votre épargne !';
+        } else if (remaining < 5000) {
+            display.classList.add('text-orange-400');
+            bar.classList.add('bg-orange-500');
+            box.classList.add('bg-orange-500/10', 'border', 'border-orange-500/20');
+            warning.classList.remove('hidden');
+            warning.className = 'text-xs mt-2 text-orange-400';
+            warning.textContent = '⚠️ Épargne de sécurité très faible — prévoyez un coussin pour les imprévus.';
+        } else if (remaining < 15000) {
+            display.classList.add('text-orange-400');
+            bar.classList.add('bg-orange-500');
+            box.classList.add('bg-orange-500/10', 'border', 'border-orange-500/20');
+            warning.classList.remove('hidden');
+            warning.className = 'text-xs mt-2 text-orange-400';
+            warning.textContent = '💡 Pensez à garder ~3-6 mois de charges en réserve (déménagement, travaux, imprévus).';
+        } else {
+            display.classList.add('text-green-400');
+            bar.classList.add('bg-green-500');
+            box.classList.add('bg-green-500/10', 'border', 'border-green-500/20');
+            warning.classList.add('hidden');
         }
     }
 
