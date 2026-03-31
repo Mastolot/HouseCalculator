@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="fr" class="dark">
+<html lang="fr" class="light-mode">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chièvres — Simulateur Hypothécaire Belge</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+    <title>Nouveau Nid — Simulateur Hypothécaire Belge</title>
+    <link rel="icon" type="image/png" href="icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -18,48 +18,51 @@
                 extend: {
                     fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
                     colors: {
-                        brand: { 50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81' },
+                        brand: { 50:'#f2f7f2',100:'#e0ede0',200:'#c3dbc4',300:'#9ac39c',400:'#72aa74',500:'#5a8a5c',600:'#4a7a4c',700:'#3d6b3f',800:'#335a35',900:'#2a4a2c' },
+                        gray: { 50:'#f6f8f5',100:'#eef1ec',200:'#dfe4db',300:'#c9d0c5',400:'#99a396',500:'#727d6f',600:'#575f54',700:'#424a3f',800:'#2c322a',900:'#1c211b',950:'#11140f' },
                     }
                 }
             }
         }
     </script>
     <style>
-        /* Custom range slider — filled track via linear-gradient */
-        input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 9999px; outline: none; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 3px solid #6366f1; transition: box-shadow 0.15s; position: relative; z-index: 2; }
-        .dark input[type="range"] { background: #374151; }
-        .light-mode input[type="range"] { background: #d1d5db; }
-        .dark input[type="range"]::-webkit-slider-thumb { background: #1e1b4b; box-shadow: 0 0 0 3px rgba(99,102,241,0.3); }
-        .light-mode input[type="range"]::-webkit-slider-thumb { background: #fff; box-shadow: 0 0 0 3px rgba(99,102,241,0.3); }
-        input[type="range"]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px rgba(99,102,241,0.25); }
-        input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 3px solid #6366f1; }
-        .dark input[type="range"]::-moz-range-thumb { background: #1e1b4b; }
+        /* Custom range slider — warm minimal */
+        input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 5px; border-radius: 9999px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 3px solid #5a8a5c; transition: box-shadow 0.15s; position: relative; z-index: 2; }
+        .dark input[type="range"] { background: #424a3f; }
+        .light-mode input[type="range"] { background: #dfe4db; }
+        .dark input[type="range"]::-webkit-slider-thumb { background: #2c322a; box-shadow: 0 0 0 3px rgba(90,138,92,0.25); }
+        .light-mode input[type="range"]::-webkit-slider-thumb { background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.1), 0 0 0 3px rgba(90,138,92,0.15); }
+        input[type="range"]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px rgba(90,138,92,0.2); }
+        input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 3px solid #5a8a5c; }
+        .dark input[type="range"]::-moz-range-thumb { background: #2c322a; }
         .light-mode input[type="range"]::-moz-range-thumb { background: #fff; }
-        input[type="range"]::-moz-range-progress { background: #6366f1; border-radius: 9999px; height: 6px; }
+        input[type="range"]::-moz-range-progress { background: #5a8a5c; border-radius: 9999px; height: 5px; }
 
         /* Smooth transitions */
-        * { transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+        * { transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s; }
         input[type="range"], input[type="range"]::-webkit-slider-thumb { transition: background-color 0.3s, box-shadow 0.15s; }
 
         /* Toggle switch */
-        .toggle-track { width: 56px; height: 28px; border-radius: 9999px; position: relative; cursor: pointer; transition: background-color 0.3s; }
-        .toggle-thumb { width: 22px; height: 22px; border-radius: 50%; background: white; position: absolute; top: 3px; left: 3px; transition: transform 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-        .toggle-track.active .toggle-thumb { transform: translateX(28px); }
+        .toggle-track { width: 52px; height: 26px; border-radius: 9999px; position: relative; cursor: pointer; transition: background-color 0.3s; }
+        .toggle-thumb { width: 20px; height: 20px; border-radius: 50%; background: white; position: absolute; top: 3px; left: 3px; transition: transform 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+        .toggle-track.active .toggle-thumb { transform: translateX(26px); }
 
-        /* Glassmorphism cards */
+        /* Cards - warm minimal */
         .glass-card { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .light-mode .card-section, .light-mode .rounded-2xl { box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03); }
+        .dark .card-section, .dark .rounded-2xl { box-shadow: none; }
 
         /* Animation */
-        @keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-        .animate-in { animation: fadeInUp 0.5s ease-out forwards; }
-        .animate-in-delay-1 { animation-delay: 0.1s; opacity: 0; }
-        .animate-in-delay-2 { animation-delay: 0.2s; opacity: 0; }
-        .animate-in-delay-3 { animation-delay: 0.3s; opacity: 0; }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+        .animate-in { animation: fadeInUp 0.4s ease-out forwards; }
+        .animate-in-delay-1 { animation-delay: 0.08s; opacity: 0; }
+        .animate-in-delay-2 { animation-delay: 0.16s; opacity: 0; }
+        .animate-in-delay-3 { animation-delay: 0.24s; opacity: 0; }
 
-        /* PEB badges */
-        .peb-btn { padding: 6px 14px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
-        .peb-btn.selected { transform: scale(1.1); box-shadow: 0 0 0 3px rgba(99,102,241,0.4); }
+        /* PEB badges — softer, pastel-like */
+        .peb-btn { padding: 5px 13px; border-radius: 8px; font-weight: 600; font-size: 0.82rem; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+        .peb-btn.selected { transform: scale(1.08); box-shadow: 0 0 0 3px rgba(90,138,92,0.3); }
         .peb-A { background: #22c55e; color: white; }
         .peb-B { background: #84cc16; color: white; }
         .peb-C { background: #eab308; color: white; }
@@ -87,9 +90,9 @@
         /* Sticky mobile bar */
         .mobile-sticky-bar { display: none; }
         @media (max-width: 1023px) {
-            .mobile-sticky-bar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; padding: 10px 16px; gap: 12px; align-items: center; justify-content: space-between; border-top: 1px solid rgba(55,65,81,0.5); }
-            .dark .mobile-sticky-bar { background: rgba(3,7,18,0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-            .light-mode .mobile-sticky-bar { background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-color: rgba(209,213,219,0.5); }
+            .mobile-sticky-bar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; padding: 10px 16px; gap: 12px; align-items: center; justify-content: space-between; }
+            .dark .mobile-sticky-bar { background: rgba(17,15,14,0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid rgba(69,64,59,0.5); }
+            .light-mode .mobile-sticky-bar { background: rgba(250,248,246,0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid rgba(232,227,221,0.8); box-shadow: 0 -2px 8px rgba(0,0,0,0.04); }
             body { padding-bottom: 64px; }
         }
 
@@ -115,59 +118,78 @@
         .export-dropdown-menu { display: none; position: absolute; bottom: 100%; left: 0; right: 0; margin-bottom: 6px; border-radius: 12px; overflow: hidden; z-index: 10; min-width: 180px; }
         .export-dropdown-menu.show { display: block; animation: fadeInUp 0.2s ease-out; }
         .export-dropdown-item { display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: background-color 0.15s; }
-        .dark .export-dropdown-menu { background: #1f2937; border: 1px solid #374151; }
-        .dark .export-dropdown-item { color: #d1d5db; }
-        .dark .export-dropdown-item:hover { background: #374151; }
-        .light-mode .export-dropdown-menu { background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .light-mode .export-dropdown-item { color: #374151; }
-        .light-mode .export-dropdown-item:hover { background: #f3f4f6; }
+        .dark .export-dropdown-menu { background: #2c322a; border: 1px solid #424a3f; }
+        .dark .export-dropdown-item { color: #c9d0c5; }
+        .dark .export-dropdown-item:hover { background: #424a3f; }
+        .light-mode .export-dropdown-menu { background: white; border: 1px solid #dfe4db; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+        .light-mode .export-dropdown-item { color: #575f54; }
+        .light-mode .export-dropdown-item:hover { background: #eef1ec; }
 
         /* Export watermark */
         .export-watermark { display: none; }
 
         /* Loading overlay for export */
-        .export-loading { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        .export-loading { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); }
         .export-loading-box { padding: 20px 32px; border-radius: 16px; text-align: center; }
-        .dark .export-loading-box { background: #1f2937; color: white; }
-        .light-mode .export-loading-box { background: white; color: #111827; }
-        .export-spinner { width: 24px; height: 24px; border: 3px solid #6366f1; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; margin-bottom: 8px; }
+        .dark .export-loading-box { background: #2c322a; color: white; }
+        .light-mode .export-loading-box { background: white; color: #1c211b; box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+        .export-spinner { width: 24px; height: 24px; border: 3px solid #5a8a5c; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; margin-bottom: 8px; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Light mode inputs - warm */
+        .light-mode input[type="number"],
+        .light-mode select { background: #f6f8f5 !important; border-color: #dfe4db !important; color: #2c322a !important; }
+        .light-mode input[type="number"]:focus,
+        .light-mode select:focus { border-color: #5a8a5c !important; }
+        .light-mode input[type="checkbox"] { background: #eef1ec !important; border-color: #c9d0c5 !important; }
+
+        /* Light mode text overrides — warm readable grays */
+        .light-mode .text-gray-300 { color: #575f54 !important; }
+        .light-mode .text-gray-400 { color: #727d6f !important; }
+        .light-mode .text-gray-500 { color: #727d6f !important; }
+        .light-mode .text-white { color: #2c322a !important; }
+        .light-mode .text-gray-200 { color: #575f54 !important; }
+        .light-mode .hover\:bg-gray-800\/30:hover { background: rgba(223,228,219,0.5) !important; }
+        .light-mode .bg-gray-700 { background: #dfe4db !important; }
+        .light-mode .border-gray-700 { border-color: #dfe4db !important; }
+        .light-mode .border-gray-800 { border-color: #dfe4db !important; }
+        .light-mode .bg-gray-800 { background: #eef1ec !important; }
+        .light-mode .hover\:bg-gray-700:hover { background: #dfe4db !important; }
+        .light-mode .text-brand-300 { color: #4a7a4c !important; }
     </style>
 </head>
-<body class="dark bg-gray-950 text-gray-100 min-h-screen font-sans">
+<body class="light-mode bg-gray-50 text-gray-900 min-h-screen font-sans">
 
     <!-- Header -->
-    <header class="sticky top-0 z-50 glass-card border-b border-gray-800/50 bg-gray-950/80">
+    <header class="sticky top-0 z-50 glass-card border-b border-gray-200/50 bg-white/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
-                </div>
+                <img src="icon.png" alt="Nouveau Nid" class="object-contain" style="width:60px;height:60px">
                 <div>
-                    <h1 class="text-lg font-bold tracking-tight">Back to Chièvres</h1>
+                    <h1 class="text-lg font-bold tracking-tight">Nouveau Nid</h1>
                     <p class="text-xs text-gray-400">Simulateur hypothécaire belge</p>
                 </div>
             </div>
             <div class="flex items-center gap-4 header-controls">
                 <!-- Region toggle -->
                 <div class="flex items-center gap-2 text-sm region-row">
-                    <span id="labelWallonie" class="font-medium text-white">Wallonie</span>
-                    <div id="regionToggle" class="toggle-track bg-brand-600" onclick="toggleRegion()">
+                    <span id="labelWallonie" class="font-medium text-gray-400">Wallonie</span>
+                    <div id="regionToggle" class="toggle-track bg-brand-500 active" onclick="toggleRegion()">
                         <div class="toggle-thumb"></div>
                     </div>
-                    <span id="labelBruxelles" class="font-medium text-gray-400">Bruxelles</span>
+                    <span id="labelBruxelles" class="font-medium text-gray-900">Bruxelles</span>
                 </div>
-                <div class="w-px h-6 bg-gray-700 hidden sm:block"></div>
+                <div class="w-px h-6 bg-gray-200 hidden sm:block"></div>
                 <!-- Hab. propre toggle -->
                 <label class="flex items-center gap-1.5 cursor-pointer region-row" title="Habitation propre et unique = taux réduit de droits d'enregistrement">
-                    <input type="checkbox" id="habPropreCheck" checked class="w-3.5 h-3.5 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800" onchange="toggleHabPropre()">
-                    <span class="text-xs text-gray-300 whitespace-nowrap">Hab. propre</span>
+                    <input type="checkbox" id="habPropreCheck" checked class="w-3.5 h-3.5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 bg-gray-100" onchange="toggleHabPropre()">
+                    <span class="text-xs text-gray-600 whitespace-nowrap">Hab. propre</span>
                 </label>
-                <div class="w-px h-6 bg-gray-700 hidden sm:block"></div>
+                <div class="w-px h-6 bg-gray-200 hidden sm:block"></div>
                 <!-- Dark/Light toggle -->
-                <button id="themeBtn" onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-gray-800 transition-colors" title="Changer de thème">
-                    <svg id="iconMoon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-                    <svg id="iconSun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                <button id="themeBtn" onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Changer de thème">
+                    <svg id="iconMoon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                    <svg id="iconSun" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                 </button>
             </div>
         </div>
@@ -190,7 +212,7 @@
                     <div class="flex justify-between text-xs text-gray-500 mt-1">
                         <span>100 000 €</span><span>1 200 000 €</span>
                     </div>
-                    <div class="border-t border-gray-800 mt-4 pt-4">
+                    <div class="border-t border-gray-200 mt-4 pt-4">
                         <div class="flex items-center justify-between mb-1">
                             <label class="text-sm font-semibold text-gray-300">Apport personnel</label>
                             <span id="downPaymentDisplay" class="text-xl font-bold text-brand-400 result-value">50 000 €</span>
@@ -200,7 +222,7 @@
                             <span>0 €</span><span>500 000 €</span>
                         </div>
                     </div>
-                    <div class="border-t border-gray-800 mt-4 pt-4">
+                    <div class="border-t border-gray-200 mt-4 pt-4">
                         <div class="flex items-center justify-between mb-2">
                             <label class="text-sm font-semibold text-gray-300">Épargne totale</label>
                         </div>
@@ -299,7 +321,7 @@
                     <div id="pebBonusNote" class="hidden mt-2 text-xs text-green-400 font-medium">
                         ✨ Bonus PEB : -0,15% appliqué → taux effectif : <span id="effectiveRateNote"></span>
                     </div>
-                    <div class="border-t border-gray-800 mt-4 pt-4">
+                    <div class="border-t border-gray-200 mt-4 pt-4">
                         <div class="flex items-center justify-between mb-1">
                             <label class="text-sm font-semibold text-gray-300">Durée du prêt</label>
                             <span id="durationDisplay" class="text-xl font-bold text-brand-400 result-value">25 ans</span>
@@ -381,7 +403,7 @@
                         <!-- Gauge SVG -->
                         <div class="relative flex-shrink-0">
                             <svg width="140" height="140" viewBox="0 0 140 140">
-                                <circle cx="70" cy="70" r="58" fill="none" stroke="currentColor" stroke-width="10" class="text-gray-800" />
+                                <circle cx="70" cy="70" r="58" fill="none" stroke="currentColor" stroke-width="10" class="text-gray-200" />
                                 <circle id="gaugeRing" cx="70" cy="70" r="58" fill="none" stroke="#22c55e" stroke-width="10"
                                     stroke-dasharray="364.42" stroke-dashoffset="200"
                                     stroke-linecap="round" transform="rotate(-90 70 70)" class="gauge-ring" />
@@ -494,17 +516,17 @@
         <div class="flex items-center gap-3 flex-1 min-w-0">
             <div class="text-center">
                 <div class="text-[10px] text-gray-400 uppercase tracking-wider leading-none mb-0.5">Mensualité</div>
-                <div id="stickyMonthly" class="text-base font-bold text-white result-value leading-tight">—</div>
+                <div id="stickyMonthly" class="text-base font-bold text-gray-900 result-value leading-tight">—</div>
             </div>
-            <div class="w-px h-8 bg-gray-700 flex-shrink-0"></div>
+            <div class="w-px h-8 bg-gray-200 flex-shrink-0"></div>
             <div class="text-center">
                 <div class="text-[10px] text-gray-400 uppercase tracking-wider leading-none mb-0.5">Endettement</div>
                 <div id="stickyDebt" class="text-base font-bold result-value leading-tight">—</div>
             </div>
-            <div class="w-px h-8 bg-gray-700 flex-shrink-0"></div>
+            <div class="w-px h-8 bg-gray-200 flex-shrink-0"></div>
             <div class="text-center">
                 <div class="text-[10px] text-gray-400 uppercase tracking-wider leading-none mb-0.5">Reste à vivre</div>
-                <div id="stickyRemain" class="text-base font-bold text-white result-value leading-tight">—</div>
+                <div id="stickyRemain" class="text-base font-bold text-gray-900 result-value leading-tight">—</div>
             </div>
         </div>
         <button onclick="document.getElementById('feasibilityCard').scrollIntoView({behavior:'smooth'})" class="p-2 rounded-lg bg-brand-600 text-white flex-shrink-0" title="Voir résultats">
@@ -724,7 +746,7 @@
                     </div>
                 </div>
 
-                <div class="mt-6 pt-4 border-t border-gray-800">
+                <div class="mt-6 pt-4 border-t border-gray-200">
                     <p class="text-[11px] text-gray-600 leading-relaxed">Sources : <a href="https://www.notaire.be/immobilier/acheter-et-vendre-un-bien-immobilier" target="_blank" class="text-brand-500/60 hover:underline">notaire.be</a> · RGIE (installation électrique) · Code civil belge · SPW Wallonie (BDES, urbanisme) · Loi sur le crédit hypothécaire belge. Cette checklist est indicative et ne remplace pas les conseils de votre notaire.</p>
                 </div>
             </div>
@@ -732,16 +754,16 @@
     </section>
 
     <!-- Footer -->
-    <footer class="text-center py-6 text-xs text-gray-600 border-t border-gray-800/50 mt-10">
-        <p>Chièvres — Simulation indicative, ne constitue pas un conseil financier. Données fiscales 2025-2026.</p>
+    <footer class="text-center py-6 text-xs text-gray-500 border-t border-gray-200/50 mt-10">
+        <p>Simulation indicative, ne constitue pas un conseil financier. Données fiscales 2025-2026.</p>
     </footer>
 
 <script>
     // ─── State ────────────────────────────────────────────
-    let region = 'wallonie'; // 'bruxelles' | 'wallonie'
+    let region = 'bruxelles'; // 'bruxelles' | 'wallonie'
     let isHabPropre = true; // habitation propre et unique → taux réduit
     let pebScore = 'C';
-    let isDark = true;
+    let isDark = false;
     let chart = null;
     let savedScenarios = []; // max 3
     let lastCalcResult = null; // store latest calculation for scenario saving
@@ -751,6 +773,13 @@
         isDark = !isDark;
         const html = document.documentElement;
         const body = document.body;
+        const themeBtn = document.getElementById('themeBtn');
+        // Region labels
+        const lW = document.getElementById('labelWallonie');
+        const lB = document.getElementById('labelBruxelles');
+        const activeLabel = region === 'bruxelles' ? lB : lW;
+        const inactiveLabel = region === 'bruxelles' ? lW : lB;
+
         if (isDark) {
             html.classList.add('dark');
             html.classList.remove('light-mode');
@@ -758,8 +787,12 @@
             body.classList.remove('light-mode', 'bg-gray-50', 'text-gray-900');
             document.getElementById('iconMoon').classList.remove('hidden');
             document.getElementById('iconSun').classList.add('hidden');
+            themeBtn.classList.remove('hover:bg-gray-100');
+            themeBtn.classList.add('hover:bg-gray-800');
+            activeLabel.classList.remove('text-gray-900');
+            activeLabel.classList.add('text-white');
             // Update all cards
-            document.querySelectorAll('.card-section, .rounded-2xl.bg-gray-900').forEach(el => {
+            document.querySelectorAll('.bg-white').forEach(el => {
                 el.classList.remove('bg-white', 'border-gray-200');
                 el.classList.add('bg-gray-900', 'border-gray-800');
             });
@@ -778,6 +811,10 @@
             body.classList.add('light-mode', 'bg-gray-50', 'text-gray-900');
             document.getElementById('iconMoon').classList.add('hidden');
             document.getElementById('iconSun').classList.remove('hidden');
+            themeBtn.classList.remove('hover:bg-gray-800');
+            themeBtn.classList.add('hover:bg-gray-100');
+            activeLabel.classList.remove('text-white');
+            activeLabel.classList.add('text-gray-900');
             // Update all cards
             document.querySelectorAll('.bg-gray-900').forEach(el => {
                 el.classList.remove('bg-gray-900', 'border-gray-800');
@@ -792,6 +829,7 @@
             header.classList.remove('bg-gray-950/80', 'border-gray-800/50');
             header.classList.add('bg-white/80', 'border-gray-200/50');
         }
+        updateAllFilledTracks();
         updateChartColors();
     }
 
@@ -800,16 +838,17 @@
         const track = document.getElementById('regionToggle');
         const lW = document.getElementById('labelWallonie');
         const lB = document.getElementById('labelBruxelles');
+        const activeClass = isDark ? 'text-white' : 'text-gray-900';
         if (region === 'bruxelles') {
             region = 'wallonie';
             track.classList.remove('active');
-            lW.classList.add('text-white'); lW.classList.remove('text-gray-400');
-            lB.classList.remove('text-white'); lB.classList.add('text-gray-400');
+            lW.classList.add(activeClass); lW.classList.remove('text-gray-400');
+            lB.classList.remove(activeClass); lB.classList.add('text-gray-400');
         } else {
             region = 'bruxelles';
             track.classList.add('active');
-            lB.classList.add('text-white'); lB.classList.remove('text-gray-400');
-            lW.classList.remove('text-white'); lW.classList.add('text-gray-400');
+            lB.classList.add(activeClass); lB.classList.remove('text-gray-400');
+            lW.classList.remove(activeClass); lW.classList.add('text-gray-400');
         }
         calculate();
     }
@@ -828,8 +867,8 @@
         const max = parseFloat(input.max);
         const val = parseFloat(input.value);
         const pct = ((val - min) / (max - min)) * 100;
-        const trackBg = isDark ? '#374151' : '#d1d5db';
-        input.style.background = `linear-gradient(to right, #6366f1 0%, #6366f1 ${pct}%, ${trackBg} ${pct}%, ${trackBg} 100%)`;
+        const trackBg = isDark ? '#424a3f' : '#dfe4db';
+        input.style.background = `linear-gradient(to right, #5a8a5c 0%, #5a8a5c ${pct}%, ${trackBg} ${pct}%, ${trackBg} 100%)`;
     }
 
     function updateAllFilledTracks() {
@@ -1233,7 +1272,7 @@
         const hasASRD = asrdTotal > 0;
         const data = hasASRD ? [capital, interest, fees, asrdTotal] : [capital, interest, fees];
         const labels = hasASRD ? ['Capital emprunté', 'Intérêts', 'Frais (notaire, enreg…)', 'Assurance SRD'] : ['Capital emprunté', 'Intérêts', 'Frais (notaire, enreg…)'];
-        const colors = hasASRD ? ['#6366f1', '#f59e0b', '#ec4899', '#14b8a6'] : ['#6366f1', '#f59e0b', '#ec4899'];
+        const colors = hasASRD ? ['#5a8a5c', '#e0a858', '#7c8fb0', '#c47d5a'] : ['#5a8a5c', '#e0a858', '#7c8fb0'];
 
         if (chart) {
             chart.data.labels = labels;
@@ -1259,10 +1298,10 @@
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: 'rgba(17,24,39,0.95)',
-                            titleColor: '#f9fafb',
-                            bodyColor: '#d1d5db',
-                            borderColor: '#374151',
+                            backgroundColor: isDark ? 'rgba(28,33,27,0.95)' : 'rgba(255,255,255,0.95)',
+                            titleColor: isDark ? '#f6f8f5' : '#2c322a',
+                            bodyColor: isDark ? '#c9d0c5' : '#575f54',
+                            borderColor: isDark ? '#424a3f' : '#dfe4db',
                             borderWidth: 1,
                             cornerRadius: 10,
                             padding: 12,
@@ -1434,7 +1473,7 @@
     }
 
     // ─── Scenarios ────────────────────────────────────────
-    const scenarioColors = ['#6366f1', '#f59e0b', '#ec4899'];
+    const scenarioColors = ['#5a8a5c', '#e0a858', '#7c8fb0'];
     const scenarioLabels = ['A', 'B', 'C'];
 
     function saveScenario() {
@@ -1641,27 +1680,27 @@
         // Build a temporary export container with all result data
         const exportDiv = document.createElement('div');
         exportDiv.style.cssText = 'position:fixed;left:-9999px;top:0;width:800px;padding:40px;font-family:Inter,system-ui,sans-serif;z-index:-1;';
-        exportDiv.style.background = isDark ? '#030712' : '#ffffff';
-        exportDiv.style.color = isDark ? '#f3f4f6' : '#111827';
+        exportDiv.style.background = isDark ? '#11140f' : '#f6f8f5';
+        exportDiv.style.color = isDark ? '#eef1ec' : '#2c322a';
 
         const s = lastCalcResult;
         const debtColor = s.debtRatio < 35 ? '#22c55e' : s.debtRatio <= 45 ? '#f59e0b' : '#ef4444';
         const ltvColor = s.ltv <= 80 ? '#22c55e' : s.ltv <= 90 ? '#f59e0b' : '#ef4444';
         const feasLabel = s.debtRatio < 35 ? '✅ Projet réalisable' : s.debtRatio <= 45 ? '⚠️ Projet tendu' : '🚫 Projet à risque';
 
-        const cardBg = isDark ? '#111827' : '#f9fafb';
-        const cardBorder = isDark ? '#1f2937' : '#e5e7eb';
-        const textMuted = isDark ? '#9ca3af' : '#6b7280';
-        const textMain = isDark ? '#f9fafb' : '#111827';
-        const brandColor = '#6366f1';
+        const cardBg = isDark ? '#1c211b' : '#ffffff';
+        const cardBorder = isDark ? '#2c322a' : '#dfe4db';
+        const textMuted = isDark ? '#99a396' : '#727d6f';
+        const textMain = isDark ? '#f6f8f5' : '#2c322a';
+        const brandColor = '#5a8a5c';
 
         exportDiv.innerHTML = `
             <div style="margin-bottom:24px;display:flex;align-items:center;gap:12px;">
-                <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#4338ca);display:flex;align-items:center;justify-content:center;">
-                    <svg width="20" height="20" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
+                <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#5a8a5c,#3d6b3f);display:flex;align-items:center;justify-content:center;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="17" rx="8" ry="4"/><circle cx="9" cy="13" r="2.2"/><circle cx="15" cy="13" r="2.2"/><circle cx="12" cy="11" r="2.2"/><path d="M6.5 9c1-3.5 4-5.5 5.5-5.5s4.5 2 5.5 5.5"/></svg>
                 </div>
                 <div>
-                    <div style="font-size:16px;font-weight:700;color:${textMain}">Back to Chièvres</div>
+                    <div style="font-size:16px;font-weight:700;color:${textMain}">Nouveau Nid</div>
                     <div style="font-size:11px;color:${textMuted}">Simulation hypothécaire — ${new Date().toLocaleDateString('fr-BE')}</div>
                 </div>
             </div>
@@ -1670,19 +1709,19 @@
                 <div style="font-size:18px;font-weight:700;color:${debtColor};margin-bottom:4px;">${feasLabel}</div>
                 <div style="font-size:13px;color:${textMuted};margin-bottom:16px;">Endettement : ${s.debtRatio.toFixed(1).replace('.',',')}% — Région : ${s.region === 'bruxelles' ? 'Bruxelles' : 'Wallonie'}</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">
-                    <div style="background:${isDark ? '#1f2937' : '#f3f4f6'};padding:14px;border-radius:12px;text-align:center;">
+                    <div style="background:${isDark ? '#2c322a' : '#eef1ec'};padding:14px;border-radius:12px;text-align:center;">
                         <div style="font-size:11px;color:${textMuted};margin-bottom:4px;">Mensualité</div>
                         <div style="font-size:18px;font-weight:700;color:${textMain}">${fmt(s.monthlyTotal)}</div>
                     </div>
-                    <div style="background:${isDark ? '#1f2937' : '#f3f4f6'};padding:14px;border-radius:12px;text-align:center;">
+                    <div style="background:${isDark ? '#2c322a' : '#eef1ec'};padding:14px;border-radius:12px;text-align:center;">
                         <div style="font-size:11px;color:${textMuted};margin-bottom:4px;">Reste à vivre</div>
                         <div style="font-size:18px;font-weight:700;color:${textMain}">${fmt(s.remaining)}</div>
                     </div>
-                    <div style="background:${isDark ? '#1f2937' : '#f3f4f6'};padding:14px;border-radius:12px;text-align:center;">
+                    <div style="background:${isDark ? '#2c322a' : '#eef1ec'};padding:14px;border-radius:12px;text-align:center;">
                         <div style="font-size:11px;color:${textMuted};margin-bottom:4px;">Quotité (LTV)</div>
                         <div style="font-size:18px;font-weight:700;color:${ltvColor}">${s.ltv.toFixed(0)}%</div>
                     </div>
-                    <div style="background:${isDark ? '#1f2937' : '#f3f4f6'};padding:14px;border-radius:12px;text-align:center;">
+                    <div style="background:${isDark ? '#2c322a' : '#eef1ec'};padding:14px;border-radius:12px;text-align:center;">
                         <div style="font-size:11px;color:${textMuted};margin-bottom:4px;">Endettement</div>
                         <div style="font-size:18px;font-weight:700;color:${debtColor}">${s.debtRatio.toFixed(1).replace('.',',')}%</div>
                     </div>
@@ -1722,7 +1761,7 @@
             const canvas = await html2canvas(exportDiv, {
                 scale: 2,
                 useCORS: true,
-                backgroundColor: isDark ? '#030712' : '#ffffff',
+                backgroundColor: isDark ? '#11140f' : '#f6f8f5',
                 logging: false,
             });
 
@@ -1762,7 +1801,15 @@
 
     // ─── Init ─────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
-        // Wallonie par défaut → toggle NOT active (active = Bruxelles)
+        // Apply light mode classes to all cards & inputs on load
+        document.querySelectorAll('.bg-gray-900').forEach(el => {
+            el.classList.remove('bg-gray-900', 'border-gray-800');
+            el.classList.add('bg-white', 'border-gray-200');
+        });
+        document.querySelectorAll('.bg-gray-800\\/60, .bg-gray-800').forEach(el => {
+            el.classList.remove('bg-gray-800/60', 'bg-gray-800');
+            el.classList.add('bg-gray-100/60', 'bg-gray-100');
+        });
         calculate();
     });
 </script>
