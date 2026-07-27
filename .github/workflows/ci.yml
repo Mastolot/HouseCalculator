@@ -1,9 +1,16 @@
 name: CI
 
+# Tourne sur chaque push, quelle que soit la branche : le retour n'est plus
+# conditionné à l'existence d'une pull request ouverte.
 on:
     push:
-        branches: [main]
     pull_request:
+
+# Un push sur une branche liée à une PR ouverte émet deux événements pour le
+# même commit. Le groupe de concurrence les fusionne au lieu de payer deux runs.
+concurrency:
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
 
 jobs:
     test:
