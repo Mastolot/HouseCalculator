@@ -1,0 +1,374 @@
+@import 'tailwindcss';
+
+/* Polices auto-hébergées : plus aucun appel à fonts.googleapis.com. */
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-500.css';
+@import '@fontsource/inter/latin-600.css';
+@import '@fontsource/inter/latin-700.css';
+@import '@fontsource/inter/latin-800.css';
+
+/*
+ * Thème sombre piloté par la classe `.dark` sur <html>, et non par la
+ * préférence système seule : l'utilisateur peut choisir explicitement.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+
+    /* Palette sauge / forêt */
+    --color-brand-50: #f2f7f2;
+    --color-brand-100: #e0ede0;
+    --color-brand-200: #c3dbc4;
+    --color-brand-300: #9ac39c;
+    --color-brand-400: #72aa74;
+    --color-brand-500: #5a8a5c;
+    --color-brand-600: #4a7a4c;
+    --color-brand-700: #3d6b3f;
+    --color-brand-800: #335a35;
+    --color-brand-900: #2a4a2c;
+
+    /* Gris chauds, teintés sauge */
+    --color-gray-50: #f6f8f5;
+    --color-gray-100: #eef1ec;
+    --color-gray-200: #dfe4db;
+    --color-gray-300: #c9d0c5;
+    --color-gray-400: #99a396;
+    --color-gray-500: #727d6f;
+    --color-gray-600: #575f54;
+    --color-gray-700: #424a3f;
+    --color-gray-800: #2c322a;
+    --color-gray-900: #1c211b;
+    --color-gray-950: #11140f;
+}
+
+/* ── Base ──────────────────────────────────────────────────────── */
+
+html {
+    color-scheme: light;
+}
+html.dark {
+    color-scheme: dark;
+}
+
+body {
+    font-family: var(--font-sans);
+}
+
+/* Chiffres à chasse fixe : les montants ne « sautent » plus au recalcul. */
+.result-value {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Anneau de focus visible et homogène sur tous les contrôles personnalisés. */
+:where(button, [role='switch'], input, select, a):focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* ── Sliders ───────────────────────────────────────────────────── */
+
+input[type='range'] {
+    appearance: none;
+    width: 100%;
+    height: 5px;
+    border-radius: 9999px;
+    outline-offset: 4px;
+    background: var(--color-gray-200);
+}
+.dark input[type='range'] {
+    background: var(--color-gray-700);
+}
+
+input[type='range']::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid var(--color-brand-500);
+    background: #fff;
+    box-shadow:
+        0 1px 4px rgb(0 0 0 / 0.1),
+        0 0 0 3px rgb(90 138 92 / 0.15);
+    transition: box-shadow 0.15s;
+}
+.dark input[type='range']::-webkit-slider-thumb {
+    background: var(--color-gray-800);
+    box-shadow: 0 0 0 3px rgb(90 138 92 / 0.25);
+}
+input[type='range']::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 6px rgb(90 138 92 / 0.2);
+}
+
+input[type='range']::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid var(--color-brand-500);
+    background: #fff;
+}
+.dark input[type='range']::-moz-range-thumb {
+    background: var(--color-gray-800);
+}
+input[type='range']::-moz-range-progress {
+    background: var(--color-brand-500);
+    border-radius: 9999px;
+    height: 5px;
+}
+
+/* Masque les flèches des champs numériques. */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+}
+input[type='number'] {
+    appearance: textfield;
+}
+
+/* ── Interrupteur ──────────────────────────────────────────────── */
+
+.toggle-track {
+    width: 52px;
+    height: 26px;
+    border-radius: 9999px;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.toggle-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.3s;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.15);
+}
+.toggle-track[aria-checked='true'] .toggle-thumb {
+    transform: translateX(26px);
+}
+
+/* ── Badges PEB ────────────────────────────────────────────────── */
+
+.peb-btn {
+    padding: 5px 13px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    border: 2px solid transparent;
+    color: #fff;
+    transition:
+        transform 0.2s,
+        box-shadow 0.2s;
+}
+.peb-btn[aria-pressed='true'] {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 3px rgb(90 138 92 / 0.45);
+}
+/* Le score sélectionné ne doit pas reposer sur la seule couleur. */
+.peb-btn[aria-pressed='true']::after {
+    content: ' ✓';
+    font-size: 0.7rem;
+}
+.peb-A {
+    background: #16833f;
+}
+.peb-B {
+    background: #4d7c0f;
+}
+.peb-C {
+    background: #a16207;
+}
+.peb-D {
+    background: #c2410c;
+}
+.peb-E {
+    background: #dc2626;
+}
+.peb-F {
+    background: #b91c1c;
+}
+.peb-G {
+    background: #7f1d1d;
+}
+
+/* ── Jauge ─────────────────────────────────────────────────────── */
+
+.gauge-ring {
+    transition: stroke-dashoffset 0.8s ease-in-out;
+}
+
+/* ── Cartes ────────────────────────────────────────────────────── */
+
+.card {
+    border-radius: var(--radius-2xl);
+    background: #fff;
+    border: 1px solid var(--color-gray-200);
+    box-shadow:
+        0 1px 3px rgb(0 0 0 / 0.04),
+        0 1px 2px rgb(0 0 0 / 0.03);
+}
+.dark .card {
+    background: var(--color-gray-900);
+    border-color: var(--color-gray-800);
+    box-shadow: none;
+}
+
+/* ── Animations ────────────────────────────────────────────────── */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.animate-in {
+    animation: fadeInUp 0.4s ease-out forwards;
+}
+.animate-in-delay-1 {
+    animation-delay: 0.08s;
+    opacity: 0;
+}
+.animate-in-delay-2 {
+    animation-delay: 0.16s;
+    opacity: 0;
+}
+.animate-in-delay-3 {
+    animation-delay: 0.24s;
+    opacity: 0;
+}
+
+/* ── Barre mobile ──────────────────────────────────────────────── */
+
+.mobile-bar {
+    display: none;
+}
+@media (max-width: 1023px) {
+    .mobile-bar {
+        display: flex;
+        position: fixed;
+        inset: auto 0 0 0;
+        z-index: 50;
+        padding: 10px 16px;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        background: rgb(250 248 246 / 0.95);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--color-gray-200);
+        box-shadow: 0 -2px 8px rgb(0 0 0 / 0.04);
+    }
+    .dark .mobile-bar {
+        background: rgb(17 20 15 / 0.95);
+        border-top-color: var(--color-gray-800);
+        box-shadow: none;
+    }
+    body {
+        padding-bottom: 64px;
+    }
+}
+
+/* ── Toasts ────────────────────────────────────────────────────── */
+
+@keyframes toastIn {
+    from {
+        transform: translate(-50%, 20px);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+}
+.toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    z-index: 100;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    pointer-events: none;
+    animation: toastIn 0.3s ease-out forwards;
+    transition: opacity 0.3s ease-in;
+}
+.toast.out {
+    opacity: 0;
+}
+@media (min-width: 1024px) {
+    .toast {
+        bottom: 24px;
+    }
+}
+
+/* ── Divers ────────────────────────────────────────────────────── */
+
+.detail-icon {
+    transition: transform 0.2s;
+}
+[aria-expanded='true'] .detail-icon {
+    transform: rotate(180deg);
+}
+
+.scenario-card .scenario-remove {
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.scenario-card:hover .scenario-remove,
+.scenario-card:focus-within .scenario-remove {
+    opacity: 1;
+}
+.scenario-badge {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 24px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--color-brand-500);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+/* Respecte le réglage système de réduction des animations. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    .animate-in,
+    .animate-in-delay-1,
+    .animate-in-delay-2,
+    .animate-in-delay-3 {
+        opacity: 1;
+    }
+}

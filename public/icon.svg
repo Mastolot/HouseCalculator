@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Nouveau Nid">
+    <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#72aa74" />
+            <stop offset="1" stop-color="#3d6b3f" />
+        </linearGradient>
+        <linearGradient id="nest" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#a68a63" />
+            <stop offset="1" stop-color="#6f5a3f" />
+        </linearGradient>
+    </defs>
+
+    <rect width="64" height="64" rx="15" fill="url(#bg)" />
+
+    <!-- Brindille et feuille -->
+    <path d="M32 34V15" stroke="#2a4a2c" stroke-width="2" stroke-linecap="round" fill="none" opacity=".55" />
+    <path d="M32 21c3.5-4.5 9.5-4 9.5-4s.5 5.8-3.6 7.4C34.4 25.8 32 21 32 21z" fill="#c3dbc4" />
+    <path d="M32 27c-2.8-3.6-7.6-3.2-7.6-3.2s-.4 4.7 2.9 6c3 1.1 4.7-2.8 4.7-2.8z" fill="#9ac39c" />
+
+    <!-- Œufs -->
+    <ellipse cx="24.5" cy="37" rx="6" ry="7" fill="#eef1ec" />
+    <ellipse cx="39.5" cy="37" rx="6" ry="7" fill="#dfe4db" />
+    <ellipse cx="32" cy="34.5" rx="6.2" ry="7.2" fill="#ffffff" />
+
+    <!-- Nid -->
+    <path d="M11 41q21 17 42 0z" fill="url(#nest)" />
+    <ellipse cx="32" cy="41" rx="21" ry="4.6" fill="#b39872" />
+    <ellipse cx="32" cy="41" rx="15" ry="2.6" fill="#5f4c34" opacity=".45" />
+    <path
+        d="M16 45q7 4 14 4M34 49q7 0 14-4M20 48q6 3 12 3"
+        stroke="#4f3f2b"
+        stroke-width="1.2"
+        stroke-linecap="round"
+        fill="none"
+        opacity=".45"
+    />
+</svg>
