@@ -1,0 +1,37 @@
+{
+  "name": "housecalculator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test:watch": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mastolot/HouseCalculator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Mastolot/HouseCalculator/issues"
+  },
+  "homepage": "https://github.com/Mastolot/HouseCalculator#readme",
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "chart.js": "^4.5.1",
+    "html2canvas-pro": "^2.3.2",
+    "jspdf": "^4.2.1"
+  }
+}

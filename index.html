@@ -1,1818 +1,871 @@
-<!DOCTYPE html>
-<html lang="fr" class="light-mode">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nouveau Nid — Simulateur Hypothécaire Belge</title>
-    <link rel="icon" type="image/png" href="icon.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-                    colors: {
-                        brand: { 50:'#f2f7f2',100:'#e0ede0',200:'#c3dbc4',300:'#9ac39c',400:'#72aa74',500:'#5a8a5c',600:'#4a7a4c',700:'#3d6b3f',800:'#335a35',900:'#2a4a2c' },
-                        gray: { 50:'#f6f8f5',100:'#eef1ec',200:'#dfe4db',300:'#c9d0c5',400:'#99a396',500:'#727d6f',600:'#575f54',700:'#424a3f',800:'#2c322a',900:'#1c211b',950:'#11140f' },
-                    }
+<!doctype html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Nouveau Nid — Simulateur hypothécaire belge</title>
+        <meta
+            name="description"
+            content="Simulateur de crédit hypothécaire pour la Wallonie et Bruxelles : mensualité, droits d'enregistrement, frais de notaire, quotité et taux d'endettement."
+        />
+        <meta name="theme-color" content="#5a8a5c" />
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+
+        <!--
+            Applique le thème avant le premier rendu. Sans ça, la page s'affiche
+            dans un thème puis bascule dans l'autre — le défaut le plus visible
+            de la version précédente.
+        -->
+        <script>
+            (function () {
+                try {
+                    var stored = localStorage.getItem('nn-theme');
+                    var dark = stored
+                        ? stored === 'dark'
+                        : window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    if (dark) document.documentElement.classList.add('dark');
+                } catch (e) {
+                    /* mode privé : on reste en clair */
                 }
-            }
-        }
-    </script>
-    <style>
-        /* Custom range slider — warm minimal */
-        input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 5px; border-radius: 9999px; outline: none; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 3px solid #5a8a5c; transition: box-shadow 0.15s; position: relative; z-index: 2; }
-        .dark input[type="range"] { background: #424a3f; }
-        .light-mode input[type="range"] { background: #dfe4db; }
-        .dark input[type="range"]::-webkit-slider-thumb { background: #2c322a; box-shadow: 0 0 0 3px rgba(90,138,92,0.25); }
-        .light-mode input[type="range"]::-webkit-slider-thumb { background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.1), 0 0 0 3px rgba(90,138,92,0.15); }
-        input[type="range"]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 6px rgba(90,138,92,0.2); }
-        input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 3px solid #5a8a5c; }
-        .dark input[type="range"]::-moz-range-thumb { background: #2c322a; }
-        .light-mode input[type="range"]::-moz-range-thumb { background: #fff; }
-        input[type="range"]::-moz-range-progress { background: #5a8a5c; border-radius: 9999px; height: 5px; }
+            })();
+        </script>
+        <script type="module" src="/src/main.js"></script>
+    </head>
 
-        /* Smooth transitions */
-        * { transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s; }
-        input[type="range"], input[type="range"]::-webkit-slider-thumb { transition: background-color 0.3s, box-shadow 0.15s; }
+    <body class="min-h-screen bg-gray-50 font-sans text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+        <a
+            href="#results"
+            class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-white"
+            >Aller aux résultats</a
+        >
 
-        /* Toggle switch */
-        .toggle-track { width: 52px; height: 26px; border-radius: 9999px; position: relative; cursor: pointer; transition: background-color 0.3s; }
-        .toggle-thumb { width: 20px; height: 20px; border-radius: 50%; background: white; position: absolute; top: 3px; left: 3px; transition: transform 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
-        .toggle-track.active .toggle-thumb { transform: translateX(26px); }
-
-        /* Cards - warm minimal */
-        .glass-card { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-        .light-mode .card-section, .light-mode .rounded-2xl { box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03); }
-        .dark .card-section, .dark .rounded-2xl { box-shadow: none; }
-
-        /* Animation */
-        @keyframes fadeInUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
-        .animate-in { animation: fadeInUp 0.4s ease-out forwards; }
-        .animate-in-delay-1 { animation-delay: 0.08s; opacity: 0; }
-        .animate-in-delay-2 { animation-delay: 0.16s; opacity: 0; }
-        .animate-in-delay-3 { animation-delay: 0.24s; opacity: 0; }
-
-        /* PEB badges — softer, pastel-like */
-        .peb-btn { padding: 5px 13px; border-radius: 8px; font-weight: 600; font-size: 0.82rem; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
-        .peb-btn.selected { transform: scale(1.08); box-shadow: 0 0 0 3px rgba(90,138,92,0.3); }
-        .peb-A { background: #22c55e; color: white; }
-        .peb-B { background: #84cc16; color: white; }
-        .peb-C { background: #eab308; color: white; }
-        .peb-D { background: #f97316; color: white; }
-        .peb-E { background: #ef4444; color: white; }
-        .peb-F { background: #dc2626; color: white; }
-        .peb-G { background: #991b1b; color: white; }
-
-        /* Gauge */
-        .gauge-ring { transition: stroke-dashoffset 0.8s ease-in-out; }
-
-        /* Number input */
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type="number"] { -moz-appearance: textfield; }
-
-        .result-value { font-variant-numeric: tabular-nums; }
-
-        /* Scenario cards */
-        .scenario-card { position: relative; }
-        .scenario-card .scenario-remove { opacity: 0; transition: opacity 0.2s; }
-        .scenario-card:hover .scenario-remove { opacity: 1; }
-        .scenario-badge { display: inline-block; width: 24px; height: 24px; border-radius: 50%; text-align: center; line-height: 24px; font-size: 0.75rem; font-weight: 700; }
-
-        /* Sticky mobile bar */
-        .mobile-sticky-bar { display: none; }
-        @media (max-width: 1023px) {
-            .mobile-sticky-bar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; padding: 10px 16px; gap: 12px; align-items: center; justify-content: space-between; }
-            .dark .mobile-sticky-bar { background: rgba(17,15,14,0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid rgba(69,64,59,0.5); }
-            .light-mode .mobile-sticky-bar { background: rgba(250,248,246,0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid rgba(232,227,221,0.8); box-shadow: 0 -2px 8px rgba(0,0,0,0.04); }
-            body { padding-bottom: 64px; }
-        }
-
-        /* Toast notification */
-        @keyframes toastIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-10px); opacity: 0; } }
-        .toast { animation: toastIn 0.3s ease-out forwards; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 100; padding: 10px 20px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; pointer-events: none; }
-        .toast.out { animation: toastOut 0.3s ease-in forwards; }
-        @media (min-width: 1024px) { .toast { bottom: 24px; } }
-
-        /* Collapsible detail */
-        .detail-toggle-icon { transition: transform 0.2s; }
-        .detail-toggle-icon.open { transform: rotate(180deg); }
-
-        /* Header responsive */
-        @media (max-width: 640px) {
-            .header-controls { flex-direction: column; gap: 8px; align-items: flex-end; }
-            .header-controls .region-row { order: 2; }
-        }
-
-        /* Export dropdown */
-        .export-dropdown { position: relative; display: inline-block; }
-        .export-dropdown-menu { display: none; position: absolute; bottom: 100%; left: 0; right: 0; margin-bottom: 6px; border-radius: 12px; overflow: hidden; z-index: 10; min-width: 180px; }
-        .export-dropdown-menu.show { display: block; animation: fadeInUp 0.2s ease-out; }
-        .export-dropdown-item { display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: background-color 0.15s; }
-        .dark .export-dropdown-menu { background: #2c322a; border: 1px solid #424a3f; }
-        .dark .export-dropdown-item { color: #c9d0c5; }
-        .dark .export-dropdown-item:hover { background: #424a3f; }
-        .light-mode .export-dropdown-menu { background: white; border: 1px solid #dfe4db; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-        .light-mode .export-dropdown-item { color: #575f54; }
-        .light-mode .export-dropdown-item:hover { background: #eef1ec; }
-
-        /* Export watermark */
-        .export-watermark { display: none; }
-
-        /* Loading overlay for export */
-        .export-loading { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); }
-        .export-loading-box { padding: 20px 32px; border-radius: 16px; text-align: center; }
-        .dark .export-loading-box { background: #2c322a; color: white; }
-        .light-mode .export-loading-box { background: white; color: #1c211b; box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
-        .export-spinner { width: 24px; height: 24px; border: 3px solid #5a8a5c; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; margin-bottom: 8px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Light mode inputs - warm */
-        .light-mode input[type="number"],
-        .light-mode select { background: #f6f8f5 !important; border-color: #dfe4db !important; color: #2c322a !important; }
-        .light-mode input[type="number"]:focus,
-        .light-mode select:focus { border-color: #5a8a5c !important; }
-        .light-mode input[type="checkbox"] { background: #eef1ec !important; border-color: #c9d0c5 !important; }
-
-        /* Light mode text overrides — warm readable grays */
-        .light-mode .text-gray-300 { color: #575f54 !important; }
-        .light-mode .text-gray-400 { color: #727d6f !important; }
-        .light-mode .text-gray-500 { color: #727d6f !important; }
-        .light-mode .text-white { color: #2c322a !important; }
-        .light-mode .text-gray-200 { color: #575f54 !important; }
-        .light-mode .hover\:bg-gray-800\/30:hover { background: rgba(223,228,219,0.5) !important; }
-        .light-mode .bg-gray-700 { background: #dfe4db !important; }
-        .light-mode .border-gray-700 { border-color: #dfe4db !important; }
-        .light-mode .border-gray-800 { border-color: #dfe4db !important; }
-        .light-mode .bg-gray-800 { background: #eef1ec !important; }
-        .light-mode .hover\:bg-gray-700:hover { background: #dfe4db !important; }
-        .light-mode .text-brand-300 { color: #4a7a4c !important; }
-    </style>
-</head>
-<body class="light-mode bg-gray-50 text-gray-900 min-h-screen font-sans">
-
-    <!-- Header -->
-    <header class="sticky top-0 z-50 glass-card border-b border-gray-200/50 bg-white/80">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <img src="icon.png" alt="Nouveau Nid" class="object-contain" style="width:60px;height:60px">
-                <div>
-                    <h1 class="text-lg font-bold tracking-tight">Nouveau Nid</h1>
-                    <p class="text-xs text-gray-400">Simulateur hypothécaire belge</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-4 header-controls">
-                <!-- Region toggle -->
-                <div class="flex items-center gap-2 text-sm region-row">
-                    <span id="labelWallonie" class="font-medium text-gray-400">Wallonie</span>
-                    <div id="regionToggle" class="toggle-track bg-brand-500 active" onclick="toggleRegion()">
-                        <div class="toggle-thumb"></div>
-                    </div>
-                    <span id="labelBruxelles" class="font-medium text-gray-900">Bruxelles</span>
-                </div>
-                <div class="w-px h-6 bg-gray-200 hidden sm:block"></div>
-                <!-- Hab. propre toggle -->
-                <label class="flex items-center gap-1.5 cursor-pointer region-row" title="Habitation propre et unique = taux réduit de droits d'enregistrement">
-                    <input type="checkbox" id="habPropreCheck" checked class="w-3.5 h-3.5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 bg-gray-100" onchange="toggleHabPropre()">
-                    <span class="text-xs text-gray-600 whitespace-nowrap">Hab. propre</span>
-                </label>
-                <div class="w-px h-6 bg-gray-200 hidden sm:block"></div>
-                <!-- Dark/Light toggle -->
-                <button id="themeBtn" onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Changer de thème">
-                    <svg id="iconMoon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-                    <svg id="iconSun" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-10">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-
-            <!-- LEFT COLUMN — Inputs -->
-            <div class="lg:col-span-5 space-y-5 animate-in">
-
-                <!-- Prix + Apport (grouped) -->
-                <div class="card-section rounded-2xl p-5 bg-gray-900 border border-gray-800">
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="text-sm font-semibold text-gray-300">Prix du bien</label>
-                        <span id="priceDisplay" class="text-xl font-bold text-brand-400 result-value">350 000 €</span>
-                    </div>
-                    <input type="range" id="price" min="100000" max="1200000" step="5000" value="350000" oninput="calculate()">
-                    <div class="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>100 000 €</span><span>1 200 000 €</span>
-                    </div>
-                    <div class="border-t border-gray-200 mt-4 pt-4">
-                        <div class="flex items-center justify-between mb-1">
-                            <label class="text-sm font-semibold text-gray-300">Apport personnel</label>
-                            <span id="downPaymentDisplay" class="text-xl font-bold text-brand-400 result-value">50 000 €</span>
-                        </div>
-                        <input type="range" id="downPayment" min="0" max="500000" step="1000" value="50000" oninput="calculate()">
-                        <div class="flex justify-between text-xs text-gray-500 mt-1">
-                            <span>0 €</span><span>500 000 €</span>
-                        </div>
-                    </div>
-                    <div class="border-t border-gray-200 mt-4 pt-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="text-sm font-semibold text-gray-300">Épargne totale</label>
-                        </div>
-                        <div class="relative">
-                            <input type="number" id="totalSavings" value="0" min="0" step="1000"
-                                class="w-full px-4 py-3 pr-12 rounded-xl bg-gray-800 border border-gray-700 text-white text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                                oninput="calculate()">
-                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">€</span>
-                        </div>
-                        <div id="savingsRemainBox" class="hidden mt-3 rounded-lg px-3 py-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs text-gray-400">Reste après apport</span>
-                                <span id="savingsRemainDisplay" class="text-sm font-bold result-value">—</span>
-                            </div>
-                            <div class="w-full bg-gray-700 rounded-full h-1.5 mt-2">
-                                <div id="savingsBar" class="h-1.5 rounded-full transition-all duration-300" style="width:0%"></div>
-                            </div>
-                            <p id="savingsWarning" class="text-xs mt-2 hidden"></p>
-                        </div>
+        <!-- ── En-tête ────────────────────────────────────────────── -->
+        <header
+            class="sticky top-0 z-50 border-b border-gray-200/60 bg-white/80 backdrop-blur-md dark:border-gray-800/60 dark:bg-gray-950/80"
+        >
+            <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+                <div class="flex items-center gap-3">
+                    <img src="/icon.svg" alt="" width="48" height="48" class="object-contain" />
+                    <div>
+                        <h1 class="text-lg font-bold tracking-tight">Nouveau Nid</h1>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">
+                            Simulateur hypothécaire belge
+                        </p>
                     </div>
                 </div>
 
-                <!-- Revenus nets mensuels -->
-                <div class="card-section rounded-2xl p-5 bg-gray-900 border border-gray-800 animate-in animate-in-delay-2">
-                    <div class="flex items-center justify-between mb-3">
-                        <label class="text-sm font-semibold text-gray-300">Revenus nets mensuels (ménage)</label>
-                    </div>
-                    <div class="relative">
-                        <input type="number" id="income" value="3700" min="0" step="50"
-                            class="w-full px-4 py-3 pr-12 rounded-xl bg-gray-800 border border-gray-700 text-white text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                            oninput="calculate()">
-                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">€/mois</span>
+                <div class="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-4">
+                    <div class="flex items-center gap-2 text-sm">
+                        <span id="labelWallonie" class="font-medium">Wallonie</span>
+                        <button
+                            type="button"
+                            id="regionToggle"
+                            role="switch"
+                            aria-checked="false"
+                            aria-label="Région : Wallonie ou Bruxelles"
+                            class="toggle-track bg-brand-500"
+                        >
+                            <span class="toggle-thumb"></span>
+                        </button>
+                        <span id="labelBruxelles" class="font-medium">Bruxelles</span>
                     </div>
 
-                    <!-- Expandable: revenus complémentaires -->
-                    <button onclick="toggleExtras()" class="mt-3 flex items-center gap-2 text-xs font-medium text-brand-400 hover:text-brand-300 transition-colors">
-                        <svg id="extrasChevron" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                        Revenus complémentaires (vision banque)
+                    <div class="hidden h-6 w-px bg-gray-200 sm:block dark:bg-gray-800"></div>
+
+                    <label
+                        class="flex cursor-pointer items-center gap-1.5"
+                        title="Habitation propre et unique : ouvre droit au taux réduit de droits d'enregistrement"
+                    >
+                        <input
+                            type="checkbox"
+                            id="ownAndOnlyHome"
+                            checked
+                            class="size-3.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800"
+                        />
+                        <span class="whitespace-nowrap text-xs text-gray-600 dark:text-gray-400"
+                            >Hab. propre</span
+                        >
+                    </label>
+
+                    <div class="hidden h-6 w-px bg-gray-200 sm:block dark:bg-gray-800"></div>
+
+                    <button
+                        type="button"
+                        id="themeBtn"
+                        class="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        aria-label="Changer de thème"
+                    >
+                        <svg
+                            class="hidden size-5 dark:block"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                            />
+                        </svg>
+                        <svg
+                            class="size-5 dark:hidden"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                            />
+                        </svg>
                     </button>
-                    <div id="extrasPanel" class="hidden mt-3 space-y-3 pl-1 border-l-2 border-brand-500/30 ml-1 py-2 pl-4">
-                        <p class="text-xs text-gray-500 leading-relaxed mb-2">La banque peut prendre en compte ces éléments pour évaluer votre capacité d'emprunt.</p>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="text-xs text-gray-400 block mb-1">13ᵉ mois / Pécule <span class="text-gray-600">(annuel)</span></label>
-                                <div class="relative">
-                                    <input type="number" id="bonus13" value="0" min="0" step="100"
-                                        class="w-full px-3 py-2 pr-8 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500"
-                                        oninput="calculate()">
-                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">€</span>
-                                </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-10">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
+                <!-- ── Colonne gauche : paramètres ────────────────── -->
+                <div class="animate-in space-y-5 lg:col-span-5">
+                    <section class="card p-5">
+                        <h2 class="sr-only">Bien et apport</h2>
+
+                        <div class="mb-1 flex items-center justify-between">
+                            <label for="price" class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                                >Prix du bien</label
+                            >
+                            <output
+                                id="priceDisplay"
+                                for="price"
+                                class="result-value text-xl font-bold text-brand-600 dark:text-brand-400"
+                                >350 000 €</output
+                            >
+                        </div>
+                        <input type="range" id="price" min="100000" max="1200000" step="5000" value="350000" />
+                        <div class="mt-1 flex justify-between text-xs text-gray-500">
+                            <span>100 000 €</span><span>1 200 000 €</span>
+                        </div>
+
+                        <div class="mt-4 border-t border-gray-200 pt-4 dark:border-gray-800">
+                            <div class="mb-1 flex items-center justify-between">
+                                <label
+                                    for="downPayment"
+                                    class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                                    >Apport personnel</label
+                                >
+                                <output
+                                    id="downPaymentDisplay"
+                                    for="downPayment"
+                                    class="result-value text-xl font-bold text-brand-600 dark:text-brand-400"
+                                    >50 000 €</output
+                                >
                             </div>
-                            <div>
-                                <label class="text-xs text-gray-400 block mb-1">Bonus annuel <span class="text-gray-600">(~50% pris)</span></label>
-                                <div class="relative">
-                                    <input type="number" id="bonusAnnual" value="0" min="0" step="100"
-                                        class="w-full px-3 py-2 pr-8 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500"
-                                        oninput="calculate()">
-                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">€</span>
-                                </div>
+                            <input
+                                type="range"
+                                id="downPayment"
+                                min="0"
+                                max="500000"
+                                step="1000"
+                                value="50000"
+                            />
+                            <div class="mt-1 flex justify-between text-xs text-gray-500">
+                                <span>0 €</span><span>500 000 €</span>
                             </div>
                         </div>
-                        <div>
-                            <label class="text-xs text-gray-400 block mb-1">Chèques repas <span class="text-gray-600">(€/jour, part patronale)</span></label>
+
+                        <div class="mt-4 border-t border-gray-200 pt-4 dark:border-gray-800">
+                            <label
+                                for="totalSavings"
+                                class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300"
+                                >Épargne totale</label
+                            >
                             <div class="relative">
-                                <input type="number" id="mealVouchers" value="0" min="0" max="8" step="0.5"
-                                    class="w-full px-3 py-2 pr-8 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500"
-                                    oninput="calculate()">
-                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">€/j</span>
+                                <input
+                                    type="number"
+                                    id="totalSavings"
+                                    value="0"
+                                    min="0"
+                                    step="1000"
+                                    class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-12 text-lg font-semibold focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                                />
+                                <span
+                                    class="absolute right-4 top-1/2 -translate-y-1/2 font-medium text-gray-500"
+                                    >€</span
+                                >
+                            </div>
+                            <div id="savingsBox" class="mt-3 hidden rounded-lg px-3 py-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-600 dark:text-gray-400"
+                                        >Reste après apport</span
+                                    >
+                                    <span id="savingsLeft" class="result-value text-sm font-bold">—</span>
+                                </div>
+                                <div class="mt-2 h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+                                    <div
+                                        id="savingsBar"
+                                        class="h-1.5 rounded-full transition-all duration-300"
+                                        style="width: 0%"
+                                    ></div>
+                                </div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3 mt-1">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" id="companyCar" class="w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800" onchange="calculate()">
-                                <span class="text-xs text-gray-400">Voiture de société <span class="text-gray-600">(+200 €/mois, non garanti)</span></span>
+                    </section>
+
+                    <section class="card animate-in animate-in-delay-2 p-5">
+                        <label
+                            for="income"
+                            class="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-300"
+                            >Revenus nets mensuels (ménage)</label
+                        >
+                        <div class="relative">
+                            <input
+                                type="number"
+                                id="income"
+                                value="3700"
+                                min="0"
+                                step="50"
+                                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-20 text-lg font-semibold focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                            />
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 font-medium text-gray-500"
+                                >€/mois</span
+                            >
+                        </div>
+
+                        <button
+                            type="button"
+                            id="extrasToggle"
+                            aria-expanded="false"
+                            aria-controls="extrasPanel"
+                            class="mt-3 flex items-center gap-2 text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                        >
+                            <svg
+                                class="detail-icon size-4"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                            Revenus complémentaires (vision banque)
+                        </button>
+
+                        <div
+                            id="extrasPanel"
+                            class="ml-1 mt-3 hidden space-y-3 border-l-2 border-brand-500/30 py-2 pl-4"
+                        >
+                            <p class="mb-2 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+                                La banque peut prendre en compte ces éléments pour évaluer votre capacité
+                                d’emprunt. Pondérations conservatrices, variables d’un établissement à
+                                l’autre.
+                            </p>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label
+                                        for="thirteenthMonth"
+                                        class="mb-1 block text-xs text-gray-600 dark:text-gray-400"
+                                        >13ᵉ mois / pécule
+                                        <span class="text-gray-500">(annuel)</span></label
+                                    >
+                                    <div class="relative">
+                                        <input
+                                            type="number"
+                                            id="thirteenthMonth"
+                                            value="0"
+                                            min="0"
+                                            step="100"
+                                            class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                                        />
+                                        <span
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500"
+                                            >€</span
+                                        >
+                                    </div>
+                                </div>
+                                <div>
+                                    <label
+                                        for="annualBonus"
+                                        class="mb-1 block text-xs text-gray-600 dark:text-gray-400"
+                                        >Bonus annuel
+                                        <span class="text-gray-500">(50 % retenus)</span></label
+                                    >
+                                    <div class="relative">
+                                        <input
+                                            type="number"
+                                            id="annualBonus"
+                                            value="0"
+                                            min="0"
+                                            step="100"
+                                            class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                                        />
+                                        <span
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500"
+                                            >€</span
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label
+                                    for="mealVoucherPerDay"
+                                    class="mb-1 block text-xs text-gray-600 dark:text-gray-400"
+                                    >Chèques repas
+                                    <span class="text-gray-500">(€/jour, part patronale)</span></label
+                                >
+                                <div class="relative">
+                                    <input
+                                        type="number"
+                                        id="mealVoucherPerDay"
+                                        value="0"
+                                        min="0"
+                                        max="8"
+                                        step="0.5"
+                                        class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                                    />
+                                    <span
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500"
+                                        >€/j</span
+                                    >
+                                </div>
+                            </div>
+                            <label class="flex cursor-pointer items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="companyCar"
+                                    class="size-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800"
+                                />
+                                <span class="text-xs text-gray-600 dark:text-gray-400"
+                                    >Voiture de société
+                                    <span class="text-gray-500">(+200 €/mois, non garanti)</span></span
+                                >
+                            </label>
+                            <div class="rounded-lg border border-brand-500/20 bg-brand-500/10 px-3 py-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-brand-700 dark:text-brand-300"
+                                        >Revenu ajusté banque</span
+                                    >
+                                    <span
+                                        id="adjustedIncome"
+                                        class="result-value text-sm font-bold text-brand-700 dark:text-brand-400"
+                                        >— €/mois</span
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="card animate-in animate-in-delay-2 p-5">
+                        <h2 class="sr-only">Conditions du crédit</h2>
+                        <div class="mb-1 flex items-center justify-between">
+                            <label for="rate" class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                                >Taux d’intérêt annuel</label
+                            >
+                            <output
+                                id="rateDisplay"
+                                for="rate"
+                                class="result-value text-xl font-bold text-brand-600 dark:text-brand-400"
+                                >3,20 %</output
+                            >
+                        </div>
+                        <input type="range" id="rate" min="0.5" max="6" step="0.05" value="3.2" />
+                        <div class="mt-1 flex justify-between text-xs text-gray-500">
+                            <span>0,50 %</span><span>6,00 %</span>
+                        </div>
+                        <p
+                            id="pebBonusNote"
+                            class="mt-2 hidden text-xs font-medium text-brand-700 dark:text-brand-400"
+                        ></p>
+
+                        <div class="mt-4 border-t border-gray-200 pt-4 dark:border-gray-800">
+                            <div class="mb-1 flex items-center justify-between">
+                                <label
+                                    for="duration"
+                                    class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                                    >Durée du prêt</label
+                                >
+                                <output
+                                    id="durationDisplay"
+                                    for="duration"
+                                    class="result-value text-xl font-bold text-brand-600 dark:text-brand-400"
+                                    >25 ans</output
+                                >
+                            </div>
+                            <input type="range" id="duration" min="5" max="30" step="1" value="25" />
+                            <div class="mt-1 flex justify-between text-xs text-gray-500">
+                                <span>5 ans</span><span>30 ans</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="card animate-in animate-in-delay-3 p-5">
+                        <h2 class="mb-3 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Score PEB du bien
+                        </h2>
+                        <div id="pebGroup" class="flex flex-wrap gap-2" role="group" aria-label="Score PEB">
+                            <button type="button" class="peb-btn peb-A" data-peb="A" aria-pressed="false">
+                                A
+                            </button>
+                            <button type="button" class="peb-btn peb-B" data-peb="B" aria-pressed="false">
+                                B
+                            </button>
+                            <button type="button" class="peb-btn peb-C" data-peb="C" aria-pressed="true">
+                                C
+                            </button>
+                            <button type="button" class="peb-btn peb-D" data-peb="D" aria-pressed="false">
+                                D
+                            </button>
+                            <button type="button" class="peb-btn peb-E" data-peb="E" aria-pressed="false">
+                                E
+                            </button>
+                            <button type="button" class="peb-btn peb-F" data-peb="F" aria-pressed="false">
+                                F
+                            </button>
+                            <button type="button" class="peb-btn peb-G" data-peb="G" aria-pressed="false">
+                                G
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="card animate-in animate-in-delay-3 p-5">
+                        <div class="mb-2 flex items-center justify-between">
+                            <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                Assurance solde restant dû
+                            </h2>
+                            <label class="flex cursor-pointer items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="asrdEnabled"
+                                    class="size-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800"
+                                />
+                                <span class="text-xs text-gray-600 dark:text-gray-400">Inclure</span>
                             </label>
                         </div>
-                        <div class="mt-2 rounded-lg bg-brand-500/10 border border-brand-500/20 px-3 py-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs text-brand-300">Revenu ajusté banque</span>
-                                <span id="adjustedIncomeDisplay" class="text-sm font-bold text-brand-400 result-value">— €/mois</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                        <p class="mb-3 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+                            Quasi obligatoire en Belgique. Protège le remboursement en cas de décès.
+                            <strong class="font-medium">Estimation indicative</strong> — l’écart avec une
+                            offre ferme peut dépasser 30 %.
+                        </p>
 
-                <!-- Taux + Durée (grouped) -->
-                <div class="card-section rounded-2xl p-5 bg-gray-900 border border-gray-800 animate-in animate-in-delay-2">
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="text-sm font-semibold text-gray-300">Taux d'intérêt annuel</label>
-                        <span id="rateDisplay" class="text-xl font-bold text-brand-400 result-value">3.20%</span>
-                    </div>
-                    <input type="range" id="rate" min="0.5" max="6" step="0.05" value="3.2" oninput="calculate()">
-                    <div class="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>0,50%</span><span>6,00%</span>
-                    </div>
-                    <div id="pebBonusNote" class="hidden mt-2 text-xs text-green-400 font-medium">
-                        ✨ Bonus PEB : -0,15% appliqué → taux effectif : <span id="effectiveRateNote"></span>
-                    </div>
-                    <div class="border-t border-gray-200 mt-4 pt-4">
-                        <div class="flex items-center justify-between mb-1">
-                            <label class="text-sm font-semibold text-gray-300">Durée du prêt</label>
-                            <span id="durationDisplay" class="text-xl font-bold text-brand-400 result-value">25 ans</span>
-                        </div>
-                        <input type="range" id="duration" min="5" max="30" step="1" value="25" oninput="calculate()">
-                        <div class="flex justify-between text-xs text-gray-500 mt-1">
-                            <span>5 ans</span><span>30 ans</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Score PEB -->
-                <div class="card-section rounded-2xl p-5 bg-gray-900 border border-gray-800 animate-in animate-in-delay-3">
-                    <label class="text-sm font-semibold text-gray-300 block mb-3">Score PEB du bien</label>
-                    <div class="flex gap-2 flex-wrap">
-                        <button class="peb-btn peb-A" onclick="selectPEB('A', this)">A</button>
-                        <button class="peb-btn peb-B" onclick="selectPEB('B', this)">B</button>
-                        <button class="peb-btn peb-C selected" onclick="selectPEB('C', this)">C</button>
-                        <button class="peb-btn peb-D" onclick="selectPEB('D', this)">D</button>
-                        <button class="peb-btn peb-E" onclick="selectPEB('E', this)">E</button>
-                        <button class="peb-btn peb-F" onclick="selectPEB('F', this)">F</button>
-                        <button class="peb-btn peb-G" onclick="selectPEB('G', this)">G</button>
-                    </div>
-                </div>
-
-                <!-- ASRD (Assurance Solde Restant Dû) -->
-                <div class="card-section rounded-2xl p-5 bg-gray-900 border border-gray-800 animate-in animate-in-delay-3">
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="text-sm font-semibold text-gray-300">Assurance solde restant dû</label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" id="asrdEnabled" class="w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800" onchange="toggleASRD()">
-                            <span class="text-xs text-gray-400">Inclure</span>
-                        </label>
-                    </div>
-                    <p class="text-xs text-gray-500 leading-relaxed mb-3">Quasi obligatoire en Belgique. Protège le remboursement en cas de décès.</p>
-                    <div id="asrdPanel" class="hidden space-y-3">
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="text-xs text-gray-400 block mb-1">Âge de l'emprunteur</label>
-                                <div class="relative">
-                                    <input type="number" id="asrdAge" value="30" min="18" max="65" step="1"
-                                        class="w-full px-3 py-2 pr-10 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500"
-                                        oninput="calculate()">
-                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">ans</span>
+                        <div id="asrdPanel" class="hidden space-y-3">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label
+                                        for="asrdAge"
+                                        class="mb-1 block text-xs text-gray-600 dark:text-gray-400"
+                                        >Âge de l’emprunteur</label
+                                    >
+                                    <div class="relative">
+                                        <input
+                                            type="number"
+                                            id="asrdAge"
+                                            value="30"
+                                            min="18"
+                                            max="65"
+                                            step="1"
+                                            class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                                        />
+                                        <span
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500"
+                                            >ans</span
+                                        >
+                                    </div>
+                                </div>
+                                <div>
+                                    <label
+                                        for="asrdCoverage"
+                                        class="mb-1 block text-xs text-gray-600 dark:text-gray-400"
+                                        >Couverture</label
+                                    >
+                                    <select
+                                        id="asrdCoverage"
+                                        class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                                    >
+                                        <option value="1">100 %</option>
+                                        <option value="0.5">50 % (couple)</option>
+                                    </select>
                                 </div>
                             </div>
+
                             <div>
-                                <label class="text-xs text-gray-400 block mb-1">Couverture</label>
-                                <select id="asrdCoverage" class="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500" onchange="calculate()">
-                                    <option value="1">100%</option>
-                                    <option value="0.5">50% (couple)</option>
+                                <label
+                                    for="asrdFinancing"
+                                    class="mb-1 block text-xs text-gray-600 dark:text-gray-400"
+                                    >Paiement de la prime unique</label
+                                >
+                                <select
+                                    id="asrdFinancing"
+                                    class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                                >
+                                    <option value="loan">Financée dans le crédit</option>
+                                    <option value="cash">Payée comptant</option>
                                 </select>
+                                <p id="asrdFinancingNote" class="mt-1 text-xs text-gray-500"></p>
+                            </div>
+
+                            <label class="flex cursor-pointer items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="asrdSmoker"
+                                    class="size-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800"
+                                />
+                                <span class="text-xs text-gray-600 dark:text-gray-400"
+                                    >Fumeur <span class="text-gray-500">(+60 % sur la prime)</span></span
+                                >
+                            </label>
+
+                            <div class="rounded-lg border border-brand-500/20 bg-brand-500/10 px-3 py-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-brand-700 dark:text-brand-300"
+                                        >Prime unique estimée</span
+                                    >
+                                    <span
+                                        id="asrdPremium"
+                                        class="result-value text-sm font-bold text-brand-700 dark:text-brand-400"
+                                        >—</span
+                                    >
+                                </div>
+                                <div class="mt-1 flex items-center justify-between">
+                                    <span class="text-xs text-brand-700 dark:text-brand-300"
+                                        >Équivalent mensuel <span class="text-gray-500">(indicatif)</span></span
+                                    >
+                                    <span
+                                        id="asrdMonthly"
+                                        class="result-value text-sm font-bold text-brand-700 dark:text-brand-400"
+                                        >—</span
+                                    >
+                                </div>
                             </div>
                         </div>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" id="asrdSmoker" class="w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800" onchange="calculate()">
-                            <span class="text-xs text-gray-400">Fumeur <span class="text-gray-600">(+60% sur la prime)</span></span>
-                        </label>
-                        <div class="rounded-lg bg-brand-500/10 border border-brand-500/20 px-3 py-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs text-brand-300">Prime unique estimée</span>
-                                <span id="asrdSinglePremium" class="text-sm font-bold text-brand-400 result-value">—</span>
+                    </section>
+                </div>
+
+                <!-- ── Colonne droite : résultats ─────────────────── -->
+                <div id="results" class="space-y-5 lg:col-span-7">
+                    <section id="feasibilityCard" class="card animate-in border p-6">
+                        <h2 class="sr-only">Faisabilité</h2>
+                        <div class="flex flex-col items-center gap-6 sm:flex-row">
+                            <div class="relative shrink-0">
+                                <svg width="140" height="140" viewBox="0 0 140 140" aria-hidden="true">
+                                    <circle
+                                        cx="70"
+                                        cy="70"
+                                        r="58"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="10"
+                                        class="text-gray-200 dark:text-gray-800"
+                                    />
+                                    <circle
+                                        id="gaugeRing"
+                                        cx="70"
+                                        cy="70"
+                                        r="58"
+                                        fill="none"
+                                        stroke="#22c55e"
+                                        stroke-width="10"
+                                        stroke-dasharray="364.42"
+                                        stroke-dashoffset="364.42"
+                                        stroke-linecap="round"
+                                        transform="rotate(-90 70 70)"
+                                        class="gauge-ring"
+                                    />
+                                </svg>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span id="gaugePercent" class="result-value text-2xl font-bold">0 %</span>
+                                    <span class="text-[10px] uppercase tracking-wider text-gray-500"
+                                        >Endettement</span
+                                    >
+                                </div>
                             </div>
-                            <div class="flex justify-between items-center mt-1">
-                                <span class="text-xs text-brand-300">Équivalent mensuel</span>
-                                <span id="asrdMonthlyDisplay" class="text-sm font-bold text-brand-400 result-value">—</span>
+
+                            <div class="flex-1 text-center sm:text-left">
+                                <p id="feasLabel" class="mb-1 text-lg font-bold">Analyse en cours…</p>
+                                <p
+                                    id="feasDesc"
+                                    class="text-sm leading-relaxed text-gray-600 dark:text-gray-400"
+                                ></p>
+                                <div class="mt-3 grid grid-cols-2 gap-3">
+                                    <div class="rounded-xl bg-gray-100/60 p-3 dark:bg-gray-800/60">
+                                        <div class="mb-0.5 text-xs text-gray-600 dark:text-gray-400">
+                                            Mensualité
+                                        </div>
+                                        <div id="monthlyResult" class="result-value text-lg font-bold">—</div>
+                                    </div>
+                                    <div class="rounded-xl bg-gray-100/60 p-3 dark:bg-gray-800/60">
+                                        <div class="mb-0.5 text-xs text-gray-600 dark:text-gray-400">
+                                            Reste à vivre
+                                        </div>
+                                        <div id="remainResult" class="result-value text-lg font-bold">—</div>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+                    </section>
+
+                    <!-- Avertissements : une seule zone, alimentée par le moteur. -->
+                    <div id="warnings" class="space-y-2 empty:hidden" role="status" aria-live="polite"></div>
+
+                    <div class="animate-in animate-in-delay-1 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <div class="card p-4 text-center">
+                            <div class="mb-1 text-xs text-gray-600 dark:text-gray-400">
+                                Besoin de financement
+                            </div>
+                            <div id="financingNeed" class="result-value text-base font-bold sm:text-lg">—</div>
+                        </div>
+                        <div class="card p-4 text-center">
+                            <div class="mb-1 text-xs text-gray-600 dark:text-gray-400">Coût des intérêts</div>
+                            <div id="totalInterest" class="result-value text-base font-bold sm:text-lg">—</div>
+                        </div>
+                        <div class="card p-4 text-center">
+                            <div class="mb-1 text-xs text-gray-600 dark:text-gray-400">Quotité (LTV)</div>
+                            <div id="ltvDisplay" class="result-value text-base font-bold sm:text-lg">—</div>
+                        </div>
+                        <div class="card p-4 text-center">
+                            <div class="mb-1 text-xs text-gray-600 dark:text-gray-400">Frais totaux</div>
+                            <div id="totalFees" class="result-value text-base font-bold sm:text-lg">—</div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- RIGHT COLUMN — Results -->
-            <div class="lg:col-span-7 space-y-5">
+                    <section class="card animate-in animate-in-delay-2 p-6">
+                        <h2 class="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Répartition du coût total
+                        </h2>
+                        <div class="flex flex-col items-center gap-6 sm:flex-row">
+                            <div class="w-full max-w-[280px] sm:w-1/2">
+                                <canvas id="costChart" role="img" aria-label="Répartition du coût total"></canvas>
+                            </div>
+                            <div id="chartLegend" class="w-full flex-1 space-y-3 text-sm"></div>
+                        </div>
+                    </section>
 
-                <!-- Feasibility Gauge -->
-                <div id="feasibilityCard" class="rounded-2xl p-6 bg-gray-900 border border-gray-800 animate-in">
-                    <div class="flex flex-col sm:flex-row items-center gap-6">
-                        <!-- Gauge SVG -->
-                        <div class="relative flex-shrink-0">
-                            <svg width="140" height="140" viewBox="0 0 140 140">
-                                <circle cx="70" cy="70" r="58" fill="none" stroke="currentColor" stroke-width="10" class="text-gray-200" />
-                                <circle id="gaugeRing" cx="70" cy="70" r="58" fill="none" stroke="#22c55e" stroke-width="10"
-                                    stroke-dasharray="364.42" stroke-dashoffset="200"
-                                    stroke-linecap="round" transform="rotate(-90 70 70)" class="gauge-ring" />
+                    <section class="card animate-in animate-in-delay-3">
+                        <button
+                            type="button"
+                            id="feeDetailToggle"
+                            aria-expanded="false"
+                            aria-controls="feeDetailPanel"
+                            class="flex w-full items-center justify-between rounded-2xl p-6 hover:bg-gray-100/50 dark:hover:bg-gray-800/30"
+                        >
+                            <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                Détail des frais
+                            </h2>
+                            <svg
+                                class="detail-icon size-5 text-gray-500"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                <span id="gaugePercent" class="text-2xl font-bold result-value">0%</span>
-                                <span class="text-[10px] text-gray-400 uppercase tracking-wider">Endettement</span>
-                            </div>
-                        </div>
-                        <!-- Feasibility info -->
-                        <div class="flex-1 text-center sm:text-left">
-                            <div id="feasLabel" class="text-lg font-bold mb-1">Analyse en cours…</div>
-                            <p id="feasDesc" class="text-sm text-gray-400 leading-relaxed"></p>
-                            <div class="mt-3 grid grid-cols-2 gap-3">
-                                <div class="rounded-xl bg-gray-800/60 p-3">
-                                    <div class="text-xs text-gray-400 mb-0.5">Mensualité</div>
-                                    <div id="monthlyResult" class="text-lg font-bold result-value">—</div>
-                                </div>
-                                <div class="rounded-xl bg-gray-800/60 p-3">
-                                    <div class="text-xs text-gray-400 mb-0.5">Reste à vivre</div>
-                                    <div id="remainResult" class="text-lg font-bold result-value">—</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Key Figures -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-in animate-in-delay-1">
-                    <div class="rounded-2xl p-4 bg-gray-900 border border-gray-800 text-center">
-                        <div class="text-xs text-gray-400 mb-1">Besoin de financement</div>
-                        <div id="financingNeed" class="text-base sm:text-lg font-bold text-white result-value">—</div>
-                    </div>
-                    <div class="rounded-2xl p-4 bg-gray-900 border border-gray-800 text-center">
-                        <div class="text-xs text-gray-400 mb-1">Coût total du crédit</div>
-                        <div id="totalCost" class="text-base sm:text-lg font-bold text-white result-value">—</div>
-                    </div>
-                    <div class="rounded-2xl p-4 bg-gray-900 border border-gray-800 text-center">
-                        <div class="text-xs text-gray-400 mb-1">Quotité (LTV)</div>
-                        <div id="ltvDisplay" class="text-base sm:text-lg font-bold text-white result-value">—</div>
-                    </div>
-                    <div class="rounded-2xl p-4 bg-gray-900 border border-gray-800 text-center">
-                        <div class="text-xs text-gray-400 mb-1">Frais totaux</div>
-                        <div id="totalFees" class="text-base sm:text-lg font-bold text-white result-value">—</div>
-                    </div>
-                </div>
-
-                <!-- Chart -->
-                <div class="rounded-2xl p-6 bg-gray-900 border border-gray-800 animate-in animate-in-delay-2">
-                    <h3 class="text-sm font-semibold text-gray-300 mb-4">Répartition du coût total</h3>
-                    <div class="flex flex-col sm:flex-row items-center gap-6">
-                        <div class="w-full sm:w-1/2 max-w-[280px]">
-                            <canvas id="costChart"></canvas>
-                        </div>
-                        <div id="chartLegend" class="flex-1 space-y-3 text-sm w-full"></div>
-                    </div>
-                </div>
-
-                <!-- Detail breakdown (collapsible) -->
-                <div class="rounded-2xl bg-gray-900 border border-gray-800 animate-in animate-in-delay-3">
-                    <button onclick="toggleFeeDetail()" class="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-gray-800/30 rounded-2xl transition-colors">
-                        <h3 class="text-sm font-semibold text-gray-300">Détail des frais</h3>
-                        <svg id="feeDetailIcon" class="w-5 h-5 text-gray-500 detail-toggle-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                    </button>
-                    <div id="feeDetailPanel" class="hidden px-6 pb-6">
-                        <div class="space-y-2 text-sm" id="feeBreakdown"></div>
-                    </div>
-                </div>
-
-                <!-- Scenario Save Button + Export -->
-                <div class="flex gap-3 animate-in animate-in-delay-3">
-                    <button onclick="saveScenario()" class="flex-1 py-3 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                        Sauvegarder ce scénario
-                    </button>
-                    <div class="export-dropdown">
-                        <button onclick="toggleExportMenu()" class="py-3 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold text-sm transition-colors flex items-center justify-center gap-2 h-full" title="Exporter la simulation">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                            Exporter
                         </button>
-                        <div id="exportMenu" class="export-dropdown-menu">
-                            <div class="export-dropdown-item" onclick="exportAs('png')">
-                                <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                Image PNG
-                            </div>
-                            <div class="export-dropdown-item" onclick="exportAs('pdf')">
-                                <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                                Document PDF
+                        <div id="feeDetailPanel" class="hidden px-6 pb-6">
+                            <div id="feeBreakdown" class="space-y-2 text-sm"></div>
+                        </div>
+                    </section>
+
+                    <div class="animate-in animate-in-delay-3 flex gap-3">
+                        <button
+                            type="button"
+                            id="saveScenario"
+                            class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white hover:bg-brand-700"
+                        >
+                            <svg
+                                class="size-4"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Sauvegarder ce scénario
+                        </button>
+
+                        <div class="relative">
+                            <button
+                                type="button"
+                                id="exportToggle"
+                                aria-expanded="false"
+                                aria-haspopup="menu"
+                                class="flex h-full items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                            >
+                                <svg
+                                    class="size-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                </svg>
+                                Exporter
+                            </button>
+                            <div
+                                id="exportMenu"
+                                role="menu"
+                                class="absolute bottom-full left-0 z-10 mb-1.5 hidden min-w-[180px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                            >
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    data-format="png"
+                                    class="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                                >
+                                    Image PNG
+                                </button>
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    data-format="pdf"
+                                    class="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                                >
+                                    Document PDF
+                                </button>
                             </div>
                         </div>
+
+                        <button
+                            type="button"
+                            id="clearScenarios"
+                            class="hidden rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+                        >
+                            Effacer tout
+                        </button>
                     </div>
-                    <button id="clearScenariosBtn" onclick="clearScenarios()" class="hidden py-3 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 font-medium text-sm transition-colors">
-                        Effacer tout
-                    </button>
-                </div>
 
-                <!-- Scenario Comparison -->
-                <div id="scenarioSection" class="hidden rounded-2xl p-6 bg-gray-900 border border-gray-800 animate-in">
-                    <h3 class="text-sm font-semibold text-gray-300 mb-4">📊 Comparaison de scénarios</h3>
-                    <div id="scenarioGrid" class="grid gap-4"></div>
-                    <div id="scenarioTable" class="mt-4 overflow-x-auto"></div>
+                    <section id="scenarioSection" class="card animate-in hidden p-6">
+                        <h2 class="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            📊 Comparaison de scénarios
+                        </h2>
+                        <div id="scenarioGrid" class="grid gap-4"></div>
+                        <div id="scenarioTable" class="mt-4 overflow-x-auto"></div>
+                    </section>
                 </div>
-
             </div>
+        </main>
+
+        <!-- ── Barre mobile ───────────────────────────────────────── -->
+        <div class="mobile-bar">
+            <div class="flex min-w-0 flex-1 items-center gap-3">
+                <div class="text-center">
+                    <div
+                        class="mb-0.5 text-[10px] uppercase leading-none tracking-wider text-gray-600 dark:text-gray-400"
+                    >
+                        Mensualité
+                    </div>
+                    <div id="stickyMonthly" class="result-value text-base font-bold leading-tight">—</div>
+                </div>
+                <div class="h-8 w-px shrink-0 bg-gray-200 dark:bg-gray-800"></div>
+                <div class="text-center">
+                    <div
+                        class="mb-0.5 text-[10px] uppercase leading-none tracking-wider text-gray-600 dark:text-gray-400"
+                    >
+                        Endettement
+                    </div>
+                    <div id="stickyDebt" class="result-value text-base font-bold leading-tight">—</div>
+                </div>
+                <div class="h-8 w-px shrink-0 bg-gray-200 dark:bg-gray-800"></div>
+                <div class="text-center">
+                    <div
+                        class="mb-0.5 text-[10px] uppercase leading-none tracking-wider text-gray-600 dark:text-gray-400"
+                    >
+                        Reste à vivre
+                    </div>
+                    <div id="stickyRemain" class="result-value text-base font-bold leading-tight">—</div>
+                </div>
+            </div>
+            <a
+                href="#results"
+                class="shrink-0 rounded-lg bg-brand-600 p-2 text-white"
+                aria-label="Voir les résultats"
+            >
+                <svg
+                    class="size-4"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+            </a>
         </div>
-    </main>
 
-    <!-- Mobile Sticky Bar -->
-    <div class="mobile-sticky-bar" id="mobileBar">
-        <div class="flex items-center gap-3 flex-1 min-w-0">
-            <div class="text-center">
-                <div class="text-[10px] text-gray-400 uppercase tracking-wider leading-none mb-0.5">Mensualité</div>
-                <div id="stickyMonthly" class="text-base font-bold text-gray-900 result-value leading-tight">—</div>
-            </div>
-            <div class="w-px h-8 bg-gray-200 flex-shrink-0"></div>
-            <div class="text-center">
-                <div class="text-[10px] text-gray-400 uppercase tracking-wider leading-none mb-0.5">Endettement</div>
-                <div id="stickyDebt" class="text-base font-bold result-value leading-tight">—</div>
-            </div>
-            <div class="w-px h-8 bg-gray-200 flex-shrink-0"></div>
-            <div class="text-center">
-                <div class="text-[10px] text-gray-400 uppercase tracking-wider leading-none mb-0.5">Reste à vivre</div>
-                <div id="stickyRemain" class="text-base font-bold text-gray-900 result-value leading-tight">—</div>
-            </div>
-        </div>
-        <button onclick="document.getElementById('feasibilityCard').scrollIntoView({behavior:'smooth'})" class="p-2 rounded-lg bg-brand-600 text-white flex-shrink-0" title="Voir résultats">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
-        </button>
-    </div>
-
-    <!-- Toast container -->
-    <div id="toastContainer"></div>
-
-    <!-- Checklist Achat -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 mt-10">
-        <div class="rounded-2xl bg-gray-900 border border-gray-800">
-            <button onclick="toggleChecklist()" class="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-gray-800/30 rounded-2xl transition-colors">
-                <div class="flex items-center gap-3">
-                    <span class="text-xl">📋</span>
-                    <h2 class="text-base font-bold text-gray-200">Checklist achat immobilier en Belgique</h2>
-                </div>
-                <svg id="checklistIcon" class="w-5 h-5 text-gray-500 detail-toggle-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-            </button>
-            <div id="checklistPanel" class="hidden px-6 pb-6">
-                <p class="text-xs text-gray-500 mb-5 leading-relaxed">Points essentiels à vérifier avant et pendant l'achat d'un bien en Belgique. Sources : notaire.be, SPW Wallonie, Code civil belge, RGIE.</p>
-
-                <!-- Phase 1: Avant la visite -->
-                <div class="mb-6">
-                    <h3 class="text-xs font-bold text-brand-400 uppercase tracking-wider mb-3">🔍 Avant la visite / Recherche</h3>
-                    <div class="space-y-2">
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Définir son budget maximum (simulation ci-dessus !)</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Incluez les frais de notaire, d'enregistrement et le coût de travaux éventuels.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Vérifier la zone d'inondation</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Consultez le <a href="http://geoportail.wallonie.be/walonmap" target="_blank" class="text-brand-400 hover:underline">Géoportail de Wallonie</a> (aléa d'inondation). Certaines assurances refusent les biens en zone à risque.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Comparer plusieurs offres de crédit</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Consultez au moins 3 banques. Les taux et frais de dossier varient significativement. Le courtier en crédit n'est pas payé par vous en Belgique.</p>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Phase 2: Visite & Documents -->
-                <div class="mb-6">
-                    <h3 class="text-xs font-bold text-brand-400 uppercase tracking-wider mb-3">🏠 Lors des visites</h3>
-                    <div class="space-y-2">
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Demander le certificat PEB</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Obligatoire pour toute vente. Doit figurer dans l'annonce. Vérifiez le score (A à G) et l'impact sur la consommation énergétique et sur votre taux bancaire (bonus PEB A/B).</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Vérifier le contrôle de l'installation électrique (RGIE)</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Le vendeur doit fournir une attestation de conformité électrique. Si non-conforme, l'acheteur a 18 mois pour mettre aux normes. Coût moyen de mise en conformité : 3 000 – 10 000 €.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Citerne à mazout : demander l'attestation de contrôle</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Si le bien a une citerne à mazout (enterrée ou aérienne), un contrôle d'étanchéité est obligatoire. Citerne enterrée : test tous les 3 ans en Wallonie. Budget remplacement : 2 000 – 5 000 €.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Vérifier la présence d'amiante</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Pour les bâtiments construits avant 2001. Pas encore obligatoire pour la vente d'une maison en Wallonie (contrairement à la Flandre), mais fortement recommandé. Coût désamiantage toiture : 30 – 60 €/m².</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Demander le précompte immobilier annuel</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Taxe foncière annuelle (régionale + communale). En Wallonie, comptez généralement entre 800 et 2 500 €/an selon la commune et le revenu cadastral.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Copropriété : demander les PV des 3 dernières AG</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Vérifiez les travaux votés, le fonds de réserve, les charges courantes et les litiges éventuels. Le syndic doit fournir ces documents.</p>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Phase 3: Offre & Compromis -->
-                <div class="mb-6">
-                    <h3 class="text-xs font-bold text-brand-400 uppercase tracking-wider mb-3">📝 Offre & Compromis de vente</h3>
-                    <div class="space-y-2">
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">L'offre d'achat vous engage juridiquement</span>
-                                <p class="text-xs text-gray-500 mt-0.5">En droit belge, une offre d'achat acceptée par le vendeur vaut vente. Incluez toujours une condition suspensive d'obtention de crédit et un délai de validité.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Condition suspensive d'obtention du crédit</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Indispensable ! Prévoyez un délai de 45 à 60 jours. Sans cette clause, vous devez acheter même si la banque refuse le prêt. Faites rédiger le compromis par votre notaire (service gratuit).</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Acompte de 5 à 10% au compromis</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Versé sur le compte tiers du notaire (pas au vendeur directement). Cet argent doit être disponible au moment de la signature du compromis.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Renseignements urbanistiques</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Le notaire les demande à la commune. Vérifiez : permis d'urbanisme en ordre, pas d'infraction, pas de plan d'expropriation. Demandez aussi les éventuelles servitudes (droit de passage, etc.).</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Attestation de sol (BDES / Bruxelles Envir.)</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Obligatoire dans les 3 régions. En Wallonie, le notaire consulte la Banque de Données de l'État des Sols (BDES). Vérifie si le terrain est pollué ou en cours de traitement.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">DIU — Dossier d'Intervention Ultérieure</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Obligatoire depuis 2001. Recense tous les travaux réalisés (plans, matériaux, câblages). Le vendeur doit le transmettre ; s'il n'existe pas, un coordinateur sécurité doit l'établir.</p>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Phase 4: Crédit & Acte -->
-                <div class="mb-6">
-                    <h3 class="text-xs font-bold text-brand-400 uppercase tracking-wider mb-3">🏦 Crédit & Acte authentique</h3>
-                    <div class="space-y-2">
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Délai de réflexion de 14 jours minimum</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Loi sur le crédit hypothécaire : après réception de l'offre de la banque, vous avez au moins 14 jours pour l'accepter ou la refuser. Ne signez pas sous pression.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Négocier les frais de dossier bancaire</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Les frais de dossier (250 – 500 €) sont souvent négociables, surtout si vous domiciliez votre salaire. Demandez aussi si l'assurance incendie groupée offre un avantage sur le taux.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Assurance incendie obligatoire</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Obligatoire pour tout crédit hypothécaire. Comparez les primes (Ethias, AG, AXA…). La banque peut exiger que vous la prenez chez eux, mais vous êtes libre de choisir après la 1ère année.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Acte authentique dans les ~4 mois</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Signé chez le notaire, c'est le transfert officiel de propriété. Le notaire perçoit les fonds, paie les droits d'enregistrement au fisc et inscrit l'hypothèque. Vous pouvez choisir votre propre notaire (sans surcoût).</p>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Phase 5: Après l'achat -->
-                <div>
-                    <h3 class="text-xs font-bold text-brand-400 uppercase tracking-wider mb-3">🔑 Après l'achat</h3>
-                    <div class="space-y-2">
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Changement de domicile à la commune</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Obligatoire dans les 8 jours du déménagement. Nécessaire pour la police d'assurance, la régionalisation fiscale et les primes éventuelles.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Transfert des compteurs (eau, gaz, électricité)</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Relevez les index le jour de la remise des clés. Contactez le fournisseur d'énergie et le distributeur d'eau pour le transfert à votre nom.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Mise en conformité électrique (si nécessaire)</span>
-                                <p class="text-xs text-gray-500 mt-0.5">Si l'attestation RGIE mentionne des infractions, vous avez 18 mois à partir de l'acte pour mettre l'installation aux normes et faire repasser le contrôle.</p>
-                            </div>
-                        </label>
-                        <label class="flex items-start gap-3 cursor-pointer group">
-                            <input type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-600 text-brand-500 focus:ring-brand-500 bg-gray-800 flex-shrink-0">
-                            <div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Budget récurrent annuel</span>
-                                <p class="text-xs text-gray-500 mt-0.5">N'oubliez pas : précompte immobilier + assurance incendie + entretien chaudière (annuel, obligatoire) + ramonage + charges copro. Comptez 2 000 – 4 000 €/an minimum.</p>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="mt-6 pt-4 border-t border-gray-200">
-                    <p class="text-[11px] text-gray-600 leading-relaxed">Sources : <a href="https://www.notaire.be/immobilier/acheter-et-vendre-un-bien-immobilier" target="_blank" class="text-brand-500/60 hover:underline">notaire.be</a> · RGIE (installation électrique) · Code civil belge · SPW Wallonie (BDES, urbanisme) · Loi sur le crédit hypothécaire belge. Cette checklist est indicative et ne remplace pas les conseils de votre notaire.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="text-center py-6 text-xs text-gray-500 border-t border-gray-200/50 mt-10">
-        <p>Simulation indicative, ne constitue pas un conseil financier. Données fiscales 2025-2026.</p>
-    </footer>
-
-<script>
-    // ─── State ────────────────────────────────────────────
-    let region = 'bruxelles'; // 'bruxelles' | 'wallonie'
-    let isHabPropre = true; // habitation propre et unique → taux réduit
-    let pebScore = 'C';
-    let isDark = false;
-    let chart = null;
-    let savedScenarios = []; // max 3
-    let lastCalcResult = null; // store latest calculation for scenario saving
-
-    // ─── Theme Toggle ─────────────────────────────────────
-    function toggleTheme() {
-        isDark = !isDark;
-        const html = document.documentElement;
-        const body = document.body;
-        const themeBtn = document.getElementById('themeBtn');
-        // Region labels
-        const lW = document.getElementById('labelWallonie');
-        const lB = document.getElementById('labelBruxelles');
-        const activeLabel = region === 'bruxelles' ? lB : lW;
-        const inactiveLabel = region === 'bruxelles' ? lW : lB;
-
-        if (isDark) {
-            html.classList.add('dark');
-            html.classList.remove('light-mode');
-            body.classList.add('dark', 'bg-gray-950', 'text-gray-100');
-            body.classList.remove('light-mode', 'bg-gray-50', 'text-gray-900');
-            document.getElementById('iconMoon').classList.remove('hidden');
-            document.getElementById('iconSun').classList.add('hidden');
-            themeBtn.classList.remove('hover:bg-gray-100');
-            themeBtn.classList.add('hover:bg-gray-800');
-            activeLabel.classList.remove('text-gray-900');
-            activeLabel.classList.add('text-white');
-            // Update all cards
-            document.querySelectorAll('.bg-white').forEach(el => {
-                el.classList.remove('bg-white', 'border-gray-200');
-                el.classList.add('bg-gray-900', 'border-gray-800');
-            });
-            document.querySelectorAll('.bg-gray-100\\/60, .bg-gray-100').forEach(el => {
-                el.classList.remove('bg-gray-100/60', 'bg-gray-100');
-                el.classList.add('bg-gray-800/60', 'bg-gray-800');
-            });
-            // Header
-            const header = document.querySelector('header');
-            header.classList.remove('bg-white/80', 'border-gray-200/50');
-            header.classList.add('bg-gray-950/80', 'border-gray-800/50');
-        } else {
-            html.classList.remove('dark');
-            html.classList.add('light-mode');
-            body.classList.remove('dark', 'bg-gray-950', 'text-gray-100');
-            body.classList.add('light-mode', 'bg-gray-50', 'text-gray-900');
-            document.getElementById('iconMoon').classList.add('hidden');
-            document.getElementById('iconSun').classList.remove('hidden');
-            themeBtn.classList.remove('hover:bg-gray-800');
-            themeBtn.classList.add('hover:bg-gray-100');
-            activeLabel.classList.remove('text-white');
-            activeLabel.classList.add('text-gray-900');
-            // Update all cards
-            document.querySelectorAll('.bg-gray-900').forEach(el => {
-                el.classList.remove('bg-gray-900', 'border-gray-800');
-                el.classList.add('bg-white', 'border-gray-200');
-            });
-            document.querySelectorAll('.bg-gray-800\\/60, .bg-gray-800').forEach(el => {
-                el.classList.remove('bg-gray-800/60', 'bg-gray-800');
-                el.classList.add('bg-gray-100/60', 'bg-gray-100');
-            });
-            // Header
-            const header = document.querySelector('header');
-            header.classList.remove('bg-gray-950/80', 'border-gray-800/50');
-            header.classList.add('bg-white/80', 'border-gray-200/50');
-        }
-        updateAllFilledTracks();
-        updateChartColors();
-    }
-
-    // ─── Region Toggle ────────────────────────────────────
-    function toggleRegion() {
-        const track = document.getElementById('regionToggle');
-        const lW = document.getElementById('labelWallonie');
-        const lB = document.getElementById('labelBruxelles');
-        const activeClass = isDark ? 'text-white' : 'text-gray-900';
-        if (region === 'bruxelles') {
-            region = 'wallonie';
-            track.classList.remove('active');
-            lW.classList.add(activeClass); lW.classList.remove('text-gray-400');
-            lB.classList.remove(activeClass); lB.classList.add('text-gray-400');
-        } else {
-            region = 'bruxelles';
-            track.classList.add('active');
-            lB.classList.add(activeClass); lB.classList.remove('text-gray-400');
-            lW.classList.remove(activeClass); lW.classList.add('text-gray-400');
-        }
-        calculate();
-    }
-
-    // ─── PEB Selector ─────────────────────────────────────
-    function selectPEB(score, btn) {
-        pebScore = score;
-        document.querySelectorAll('.peb-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        calculate();
-    }
-
-    // ─── Filled Range Track ─────────────────────────────
-    function updateFilledTrack(input) {
-        const min = parseFloat(input.min);
-        const max = parseFloat(input.max);
-        const val = parseFloat(input.value);
-        const pct = ((val - min) / (max - min)) * 100;
-        const trackBg = isDark ? '#424a3f' : '#dfe4db';
-        input.style.background = `linear-gradient(to right, #5a8a5c 0%, #5a8a5c ${pct}%, ${trackBg} ${pct}%, ${trackBg} 100%)`;
-    }
-
-    function updateAllFilledTracks() {
-        document.querySelectorAll('input[type="range"]').forEach(updateFilledTrack);
-    }
-
-    // ─── Toast Notification ───────────────────────────────
-    function showToast(msg) {
-        const container = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        const bg = isDark ? 'bg-gray-800 text-white border border-gray-700' : 'bg-white text-gray-900 border border-gray-200 shadow-lg';
-        toast.className = `toast ${bg}`;
-        toast.textContent = msg;
-        container.appendChild(toast);
-        setTimeout(() => { toast.classList.add('out'); }, 2000);
-        setTimeout(() => { toast.remove(); }, 2300);
-    }
-
-    // ─── Fee Detail Toggle ────────────────────────────────
-    function toggleFeeDetail() {
-        const panel = document.getElementById('feeDetailPanel');
-        const icon = document.getElementById('feeDetailIcon');
-        panel.classList.toggle('hidden');
-        icon.classList.toggle('open');
-    }
-
-    // ─── Checklist Toggle ─────────────────────────────────
-    function toggleChecklist() {
-        const panel = document.getElementById('checklistPanel');
-        const icon = document.getElementById('checklistIcon');
-        panel.classList.toggle('hidden');
-        icon.classList.toggle('open');
-    }
-
-    // ─── Sticky Bar Update ────────────────────────────────
-    function updateStickyBar(monthlyTotal, debtRatio, remaining) {
-        document.getElementById('stickyMonthly').textContent = fmt(monthlyTotal);
-        const stickyDebt = document.getElementById('stickyDebt');
-        stickyDebt.textContent = debtRatio.toFixed(1).replace('.', ',') + '%';
-        stickyDebt.classList.remove('text-green-400', 'text-orange-400', 'text-red-400');
-        if (debtRatio < 35) stickyDebt.classList.add('text-green-400');
-        else if (debtRatio <= 45) stickyDebt.classList.add('text-orange-400');
-        else stickyDebt.classList.add('text-red-400');
-        document.getElementById('stickyRemain').textContent = fmt(remaining);
-    }
-
-    // ─── Format helpers ───────────────────────────────────
-    function fmt(n) {
-        return new Intl.NumberFormat('fr-BE', { maximumFractionDigits: 0 }).format(Math.round(n)) + ' €';
-    }
-    function fmtShort(n) {
-        if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.', ',') + ' M€';
-        if (n >= 10000) return Math.round(n / 1000) + ' k€';
-        return fmt(n);
-    }
-
-    // ─── Hab. propre toggle ───────────────────────────────
-    function toggleHabPropre() {
-        isHabPropre = document.getElementById('habPropreCheck').checked;
-        calculate();
-    }
-
-    // ─── Fiscal Calculations ──────────────────────────────
-    function calcRegistrationFees(price, region, habPropre) {
-        if (region === 'wallonie') {
-            if (habPropre) {
-                // 3% taux réduit habitation propre et unique (réforme janv. 2024)
-                return price * 0.03;
-            } else {
-                // 12,5% taux normal (pas hab. propre ou déjà propriétaire)
-                return price * 0.125;
-            }
-        } else {
-            // Bruxelles
-            if (habPropre) {
-                // 12,5% avec abattement : 0% sur les premiers 200k si prix ≤ 600k
-                if (price <= 600000) {
-                    const taxable = Math.max(0, price - 200000);
-                    return taxable * 0.125;
-                } else {
-                    return price * 0.125;
-                }
-            } else {
-                // 12,5% sans abattement (pas hab. propre)
-                return price * 0.125;
-            }
-        }
-    }
-
-    // ─── Barème dégressif notaire belge (AR 1950, indexé) ──
-    function notaryFeesScale(amount) {
-        const brackets = [
-            { up: 7500, rate: 0.0456 },
-            { up: 17500, rate: 0.0285 },
-            { up: 30000, rate: 0.0228 },
-            { up: 45495, rate: 0.0171 },
-            { up: 64095, rate: 0.0114 },
-            { up: 250095, rate: 0.0057 },
-            { up: Infinity, rate: 0.00057 }
-        ];
-        let fees = 0, prev = 0;
-        for (const b of brackets) {
-            if (amount <= prev) break;
-            fees += (Math.min(amount, b.up) - prev) * b.rate;
-            prev = b.up;
-        }
-        return fees;
-    }
-
-    function calcNotaryFees(price) {
-        // Honoraires (barème dégressif réglementé)
-        const honoraires = notaryFeesScale(price);
-        // TVA 21% sur les honoraires
-        const tva = honoraires * 0.21;
-        // Frais administratifs et de recherche
-        const admin = 1100;
-        return { honoraires, tva, admin, total: honoraires + tva + admin };
-    }
-
-    function calcMortgageDeedFees(loanAmount) {
-        // Droit d'enregistrement sur l'acte hypothécaire : 1%
-        const registrationTax = loanAmount * 0.01;
-        // Droit d'inscription hypothécaire (conservation) : 0,3%
-        const inscriptionFee = loanAmount * 0.003;
-        // Honoraires du notaire pour l'acte de crédit (même barème)
-        const honoraires = notaryFeesScale(loanAmount);
-        const tva = honoraires * 0.21;
-        // Frais administratifs acte de crédit
-        const admin = 850;
-        // Frais de dossier bancaire
-        const dossierBank = 500;
-        return {
-            registrationTax, inscriptionFee, honoraires, tva,
-            admin, dossierBank,
-            total: registrationTax + inscriptionFee + honoraires + tva + admin + dossierBank
-        };
-    }
-
-    // ─── ASRD Toggle ──────────────────────────────────────
-    function toggleASRD() {
-        const panel = document.getElementById('asrdPanel');
-        const enabled = document.getElementById('asrdEnabled').checked;
-        if (enabled) {
-            panel.classList.remove('hidden');
-        } else {
-            panel.classList.add('hidden');
-        }
-        calculate();
-    }
-
-    // ─── ASRD Calculation ─────────────────────────────────
-    function calcASRD(loanAmount, durationYears, age, isSmoker, coverage) {
-        // Prime unique estimée en % du capital (marché belge)
-        // Basé sur les tarifs moyens AG Insurance / Ethias / AXA
-        let baseRate;
-        if (age <= 25)      baseRate = 0.025;
-        else if (age <= 30) baseRate = 0.035;
-        else if (age <= 35) baseRate = 0.050;
-        else if (age <= 40) baseRate = 0.070;
-        else if (age <= 45) baseRate = 0.095;
-        else if (age <= 50) baseRate = 0.135;
-        else if (age <= 55) baseRate = 0.190;
-        else if (age <= 60) baseRate = 0.270;
-        else                baseRate = 0.350;
-
-        // Majoration fumeur : +60%
-        if (isSmoker) baseRate *= 1.60;
-
-        // Ajustement durée (normalisé sur 20 ans)
-        baseRate *= (0.70 + 0.30 * (durationYears / 20));
-
-        // Appliquer la couverture
-        baseRate *= coverage;
-
-        const singlePremium = loanAmount * baseRate;
-        const monthlyEquivalent = singlePremium / (durationYears * 12);
-
-        return { singlePremium, monthlyEquivalent };
-    }
-
-    // ─── Extras Panel Toggle ──────────────────────────────
-    function toggleExtras() {
-        const panel = document.getElementById('extrasPanel');
-        const chevron = document.getElementById('extrasChevron');
-        panel.classList.toggle('hidden');
-        chevron.style.transform = panel.classList.contains('hidden') ? '' : 'rotate(90deg)';
-    }
-
-    // ─── Adjusted Income (bank view) ──────────────────────
-    function getAdjustedIncome() {
-        const baseIncome = parseFloat(document.getElementById('income').value) || 0;
-        const bonus13 = parseFloat(document.getElementById('bonus13')?.value) || 0;
-        const bonusAnnual = parseFloat(document.getElementById('bonusAnnual')?.value) || 0;
-        const hasCar = document.getElementById('companyCar')?.checked || false;
-        const mealVoucherDay = parseFloat(document.getElementById('mealVouchers')?.value) || 0;
-
-        // 13ème mois : lissé sur 12 mois (100%)
-        const monthly13 = bonus13 / 12;
-        // Bonus annuel : banques prennent ~50% (moyenne marché), lissé sur 12 mois
-        const monthlyBonus = (bonusAnnual * 0.50) / 12;
-        // Voiture de société : ~200€/mois (valeur conservative, non garanti par toutes les banques)
-        const carBonus = hasCar ? 200 : 0;
-        // Chèques repas : part patronale × ~20 jours ouvrables (accepté KBC, ING, BNP…)
-        const monthlyMealVouchers = mealVoucherDay * 20;
-
-        const adjusted = baseIncome + monthly13 + monthlyBonus + carBonus + monthlyMealVouchers;
-
-        const display = document.getElementById('adjustedIncomeDisplay');
-        if (display) display.textContent = fmt(Math.round(adjusted)) + '/mois';
-
-        return adjusted;
-    }
-
-    // ─── Adaptive Debt Ratio Thresholds ───────────────────
-    // Les banques belges adaptent le seuil d'endettement selon le revenu :
-    // plus le revenu est élevé, plus le reste à vivre est confortable même
-    // avec un ratio plus haut. Source : pratique BNP, KBC, ING, Belfius.
-    function getDebtThresholds(monthlyIncome) {
-        if (monthlyIncome >= 6000) return { green: 45, orange: 50, minRemaining: 1200 };
-        if (monthlyIncome >= 4000) return { green: 42, orange: 48, minRemaining: 1400 };
-        if (monthlyIncome >= 2500) return { green: 38, orange: 45, minRemaining: 1500 };
-        return { green: 33, orange: 40, minRemaining: 1500 };
-    }
-
-    // ─── Main Calculation ─────────────────────────────────
-    function calculate() {
-        const price = parseFloat(document.getElementById('price').value);
-        const downPayment = parseFloat(document.getElementById('downPayment').value);
-        const income = getAdjustedIncome();
-        let rate = parseFloat(document.getElementById('rate').value);
-        const years = parseInt(document.getElementById('duration').value);
-
-        // PEB bonus
-        const hasPEBBonus = (pebScore === 'A' || pebScore === 'B');
-        const effectiveRate = hasPEBBonus ? Math.max(0.1, rate - 0.15) : rate;
-        const pebNote = document.getElementById('pebBonusNote');
-        if (hasPEBBonus) {
-            pebNote.classList.remove('hidden');
-            document.getElementById('effectiveRateNote').textContent = effectiveRate.toFixed(2).replace('.', ',') + '%';
-        } else {
-            pebNote.classList.add('hidden');
-        }
-
-        // Update displays
-        document.getElementById('priceDisplay').textContent = fmt(price);
-        document.getElementById('downPaymentDisplay').textContent = fmt(downPayment);
-        document.getElementById('rateDisplay').textContent = rate.toFixed(2).replace('.', ',') + '%';
-        document.getElementById('durationDisplay').textContent = years + ' ans';
-
-        // ── Frais d'achat (acte de vente) ──────────────────
-        const registrationFees = calcRegistrationFees(price, region, isHabPropre);
-        const notary = calcNotaryFees(price);
-        const purchaseFees = registrationFees + notary.total;
-
-        // ── Calcul itératif (frais hypothécaires dépendent du montant emprunté)
-        let loanAmount = Math.max(0, price + purchaseFees - downPayment);
-        let mortgage = calcMortgageDeedFees(loanAmount);
-        for (let i = 0; i < 3; i++) {
-            loanAmount = Math.max(0, price + purchaseFees + mortgage.total - downPayment);
-            mortgage = calcMortgageDeedFees(loanAmount);
-        }
-        const totalFees = purchaseFees + mortgage.total;
-        const financingNeed = loanAmount;
-
-        // ── Quotité (LTV) ────────────────────────────────
-        const ltv = price > 0 ? (financingNeed / price) * 100 : 0;
-
-        // Monthly payment calculation
-        const P = financingNeed;
-        const r = effectiveRate / 100 / 12;
-        const n = years * 12;
-        let monthly = 0;
-        if (r > 0 && n > 0 && P > 0) {
-            monthly = P * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-        } else if (n > 0 && P > 0) {
-            monthly = P / n;
-        }
-
-        // ── ASRD ─────────────────────────────────────────
-        const asrdEnabled = document.getElementById('asrdEnabled')?.checked || false;
-        let asrd = { singlePremium: 0, monthlyEquivalent: 0 };
-        if (asrdEnabled && P > 0) {
-            const age = parseInt(document.getElementById('asrdAge')?.value) || 30;
-            const isSmoker = document.getElementById('asrdSmoker')?.checked || false;
-            const coverage = parseFloat(document.getElementById('asrdCoverage')?.value) || 1;
-            asrd = calcASRD(P, years, age, isSmoker, coverage);
-            document.getElementById('asrdSinglePremium').textContent = fmt(asrd.singlePremium);
-            document.getElementById('asrdMonthlyDisplay').textContent = fmt(asrd.monthlyEquivalent) + '/mois';
-        }
-        const monthlyTotal = monthly + asrd.monthlyEquivalent;
-
-        // Ratios (with ASRD included)
-        const debtRatio = income > 0 ? (monthlyTotal / income) * 100 : 0;
-        const remaining = income - monthlyTotal;
-        const totalCredit = (monthly * n) - P;
-
-        // Update results
-        if (asrdEnabled && asrd.monthlyEquivalent > 0) {
-            document.getElementById('monthlyResult').innerHTML = fmt(monthlyTotal) + `<span class="text-xs text-gray-500 block">(dont ASRD ${fmt(asrd.monthlyEquivalent)})</span>`;
-        } else {
-            document.getElementById('monthlyResult').textContent = fmt(monthly);
-        }
-        document.getElementById('remainResult').textContent = fmt(remaining);
-        document.getElementById('financingNeed').textContent = fmtShort(financingNeed);
-        document.getElementById('totalCost').textContent = fmtShort(totalCredit);
-
-        // LTV display with color coding
-        const ltvEl = document.getElementById('ltvDisplay');
-        ltvEl.textContent = ltv.toFixed(0).replace('.', ',') + '%';
-        ltvEl.classList.remove('text-green-400', 'text-orange-400', 'text-red-400', 'text-white');
-        if (ltv <= 80) {
-            ltvEl.classList.add('text-green-400');
-        } else if (ltv <= 90) {
-            ltvEl.classList.add('text-orange-400');
-        } else {
-            ltvEl.classList.add('text-red-400');
-        }
-
-        document.getElementById('totalFees').textContent = fmtShort(totalFees);
-
-        // Feasibility (adaptive thresholds based on income)
-        updateFeasibility(debtRatio, remaining, income);
-
-        // Chart (include ASRD in interest section for visual)
-        const asrdTotal = asrd.singlePremium;
-        updateChart(P, totalCredit, totalFees, asrdTotal);
-
-        // Store last result for scenario saving
-        lastCalcResult = {
-            price, downPayment: downPayment, rate: effectiveRate, years, peb: pebScore, region,
-            monthly, monthlyASRD: asrd.monthlyEquivalent, monthlyTotal,
-            debtRatio, remaining, ltv, financingNeed, totalFees, totalCredit,
-            asrdEnabled, asrdSingle: asrd.singlePremium,
-            totalOperation: price + totalFees + totalCredit + asrdTotal
-        };
-
-        // Fee breakdown
-        updateFeeBreakdown({ registrationFees, notary, mortgage, totalFees, price, financingNeed, monthly, monthlyTotal, asrd, asrdEnabled, n, totalCredit, effectiveRate, debtRatio, remaining, ltv });
-
-        // Sticky mobile bar
-        updateStickyBar(monthlyTotal, debtRatio, remaining);
-
-        // Savings remaining
-        updateSavingsRemaining(downPayment);
-
-        // Filled range tracks
-        updateAllFilledTracks();
-    }
-
-    // ─── Feasibility Gauge (adaptive) ─────────────────────
-    function updateFeasibility(debtRatio, remaining, income) {
-        const thresholds = getDebtThresholds(income);
-        const ring = document.getElementById('gaugeRing');
-        const circumference = 2 * Math.PI * 58; // ~364.42
-        const pct = Math.min(debtRatio, 60);
-        const offset = circumference - (pct / 60) * circumference;
-        ring.style.strokeDashoffset = offset;
-
-        const percentEl = document.getElementById('gaugePercent');
-        percentEl.textContent = debtRatio.toFixed(1).replace('.', ',') + '%';
-
-        const label = document.getElementById('feasLabel');
-        const desc = document.getElementById('feasDesc');
-        const card = document.getElementById('feasibilityCard');
-
-        // Remove old colors
-        ring.removeAttribute('stroke');
-        card.classList.remove('border-green-500/30', 'border-orange-500/30', 'border-red-500/30');
-
-        const thresholdNote = `(seuil adapté : ${thresholds.green}% pour vos revenus)`;
-
-        if (debtRatio < thresholds.green && remaining > thresholds.minRemaining) {
-            ring.setAttribute('stroke', '#22c55e');
-            percentEl.classList.remove('text-orange-400', 'text-red-400');
-            percentEl.classList.add('text-green-400');
-            label.textContent = '✅ Projet réalisable';
-            label.className = 'text-lg font-bold mb-1 text-green-400';
-            desc.textContent = `Endettement de ${debtRatio.toFixed(1).replace('.', ',')}% — sous le seuil de ${thresholds.green}% ${thresholdNote}. Reste à vivre : ${fmt(remaining)}.`;
-            card.classList.add('border-green-500/30');
-        } else if (debtRatio <= thresholds.orange) {
-            ring.setAttribute('stroke', '#f59e0b');
-            percentEl.classList.remove('text-green-400', 'text-red-400');
-            percentEl.classList.add('text-orange-400');
-            label.textContent = '⚠️ Projet tendu';
-            label.className = 'text-lg font-bold mb-1 text-orange-400';
-            desc.textContent = `Endettement de ${debtRatio.toFixed(1).replace('.', ',')}% ${thresholdNote}. La banque pourrait exiger des garanties supplémentaires. Reste à vivre : ${fmt(remaining)}.`;
-            card.classList.add('border-orange-500/30');
-        } else {
-            ring.setAttribute('stroke', '#ef4444');
-            percentEl.classList.remove('text-green-400', 'text-orange-400');
-            percentEl.classList.add('text-red-400');
-            label.textContent = '🚫 Projet à risque';
-            label.className = 'text-lg font-bold mb-1 text-red-400';
-            desc.textContent = `Endettement de ${debtRatio.toFixed(1).replace('.', ',')}% — dépasse ${thresholds.orange}% ${thresholdNote}. Réduisez le prix, augmentez l'apport ou allongez la durée.`;
-            card.classList.add('border-red-500/30');
-        }
-    }
-
-    // ─── Chart ────────────────────────────────────────────
-    function updateChart(capital, interest, fees, asrdTotal = 0) {
-        const hasASRD = asrdTotal > 0;
-        const data = hasASRD ? [capital, interest, fees, asrdTotal] : [capital, interest, fees];
-        const labels = hasASRD ? ['Capital emprunté', 'Intérêts', 'Frais (notaire, enreg…)', 'Assurance SRD'] : ['Capital emprunté', 'Intérêts', 'Frais (notaire, enreg…)'];
-        const colors = hasASRD ? ['#5a8a5c', '#e0a858', '#7c8fb0', '#c47d5a'] : ['#5a8a5c', '#e0a858', '#7c8fb0'];
-
-        if (chart) {
-            chart.data.labels = labels;
-            chart.data.datasets[0].data = data;
-            chart.data.datasets[0].backgroundColor = colors;
-            chart.update();
-        } else {
-            const ctx = document.getElementById('costChart').getContext('2d');
-            chart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: colors,
-                        borderWidth: 0,
-                        hoverOffset: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    cutout: '65%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: isDark ? 'rgba(28,33,27,0.95)' : 'rgba(255,255,255,0.95)',
-                            titleColor: isDark ? '#f6f8f5' : '#2c322a',
-                            bodyColor: isDark ? '#c9d0c5' : '#575f54',
-                            borderColor: isDark ? '#424a3f' : '#dfe4db',
-                            borderWidth: 1,
-                            cornerRadius: 10,
-                            padding: 12,
-                            callbacks: {
-                                label: function(ctx) {
-                                    return ctx.label + ': ' + fmt(ctx.raw);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Custom legend
-        const legend = document.getElementById('chartLegend');
-        const total = data.reduce((a, b) => a + b, 0);
-        legend.innerHTML = data.map((val, i) => {
-            const pct = total > 0 ? ((val / total) * 100).toFixed(1).replace('.', ',') : '0';
-            return `
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full" style="background:${colors[i]}"></div>
-                        <span class="text-gray-400">${labels[i]}</span>
-                    </div>
-                    <div class="font-semibold result-value">${fmtShort(val)} <span class="text-gray-500 text-xs">(${pct}%)</span></div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    function updateChartColors() {
-        // Chart colors don't change between themes, so nothing needed here
-        if (chart) chart.update();
-    }
-
-    // ─── Fee Breakdown ────────────────────────────────────
-    function updateFeeBreakdown(d) {
-        const el = document.getElementById('feeBreakdown');
-        const regionLabel = region === 'bruxelles' ? 'Bruxelles' : 'Wallonie';
-        const bc = isDark ? 'border-gray-800' : 'border-gray-200';
-        const bc2 = isDark ? 'border-gray-700' : 'border-gray-300';
-
-        let regExplanation = '';
-        if (region === 'wallonie') {
-            regExplanation = isHabPropre
-                ? '3% (taux réduit hab. propre et unique)'
-                : '12,5% (taux normal — pas hab. propre)';
-        } else {
-            if (isHabPropre) {
-                regExplanation = d.price <= 600000
-                    ? '12,5% avec abattement (0% sur premiers 200k€)'
-                    : '12,5% sans abattement (prix > 600k€)';
-            } else {
-                regExplanation = '12,5% sans abattement (pas hab. propre)';
-            }
-        }
-
-        // LTV warning
-        let ltvWarning = '';
-        if (d.ltv > 100) {
-            ltvWarning = `<div class="mt-3 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 text-xs text-red-400">⚠️ Quotité de ${d.ltv.toFixed(0)}% — La plupart des banques belges refusent au-delà de 100%. Augmentez votre apport.</div>`;
-        } else if (d.ltv > 90) {
-            ltvWarning = `<div class="mt-3 rounded-lg bg-orange-500/10 border border-orange-500/30 px-3 py-2 text-xs text-orange-400">⚠️ Quotité de ${d.ltv.toFixed(0)}% — Au-delà de 90%, les banques exigent souvent un taux plus élevé et des garanties supplémentaires.</div>`;
-        } else if (d.ltv > 80) {
-            ltvWarning = `<div class="mt-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 text-xs text-yellow-400">💡 Quotité de ${d.ltv.toFixed(0)}% — Correct pour un premier achat. En-dessous de 80% vous obtiendrez de meilleures conditions.</div>`;
-        }
-
-        el.innerHTML = `
-            <p class="text-xs text-gray-500 mb-3 leading-relaxed">📐 Frais calculés selon le barème dégressif notarial belge (AR 1950) + TVA 21%</p>
-
-            <div class="text-xs font-semibold text-brand-400 uppercase tracking-wider mb-2 mt-1">Acte de vente</div>
-            <div class="flex justify-between py-2 ${bc} border-b">
-                <span class="text-gray-400">Région</span>
-                <span class="font-medium">${regionLabel}</span>
-            </div>
-            <div class="flex justify-between py-2 ${bc} border-b">
-                <span class="text-gray-400">Droits d'enregistrement <span class="text-xs">(${regExplanation})</span></span>
-                <span class="font-medium result-value">${fmt(d.registrationFees)}</span>
-            </div>
-            <div class="flex justify-between py-2 ${bc} border-b">
-                <span class="text-gray-400">Honoraires notaire <span class="text-xs">(barème dégressif)</span></span>
-                <span class="font-medium result-value">${fmt(d.notary.honoraires)}</span>
-            </div>
-            <div class="flex justify-between py-2 ${bc} border-b">
-                <span class="text-gray-400">TVA 21% sur honoraires</span>
-                <span class="font-medium result-value">${fmt(d.notary.tva)}</span>
-            </div>
-            <div class="flex justify-between py-2 ${bc} border-b">
-                <span class="text-gray-400">Frais administratifs & recherches</span>
-                <span class="font-medium result-value">${fmt(d.notary.admin)}</span>
-            </div>
-
-            <div class="text-xs font-semibold text-brand-400 uppercase tracking-wider mb-2 mt-4">Acte hypothécaire</div>
-            <div class="flex justify-between py-2 ${bc} border-b">
-                <span class="text-gray-400">Droit d'enregistrement <span class="text-xs">(1% du prêt)</span></span>
-                <span class="font-medium result-value">${fmt(d.mortgage.registrationTax)}</span>
-            </div>
-            <div class="flex justify-between py-2 ${bc} border-b">
-                <span class="text-gray-400">Droit d'inscription hypothécaire <span class="text-xs">(0,3%)</span></span>
-                <span class="font-medium result-value">${fmt(d.mortgage.inscriptionFee)}</span>
-            </div>
-            <div class="flex justify-between py-2 ${bc} border-b">
-                <span class="text-gray-400">Honoraires notaire (acte crédit)</span>
-                <span class="font-medium result-value">${fmt(d.mortgage.honoraires)}</span>
-            </div>
-            <div class="flex justify-between py-2 ${bc} border-b">
-                <span class="text-gray-400">TVA 21% sur honoraires crédit</span>
-                <span class="font-medium result-value">${fmt(d.mortgage.tva)}</span>
-            </div>
-            <div class="flex justify-between py-2 ${bc} border-b">
-                <span class="text-gray-400">Frais admin. acte crédit</span>
-                <span class="font-medium result-value">${fmt(d.mortgage.admin)}</span>
-            </div>
-            <div class="flex justify-between py-2 ${bc} border-b">
-                <span class="text-gray-400">Frais de dossier bancaire</span>
-                <span class="font-medium result-value">${fmt(d.mortgage.dossierBank)}</span>
-            </div>
-
-            <div class="flex justify-between py-2 ${bc} border-b font-semibold mt-2">
-                <span>Total des frais</span>
-                <span class="text-brand-400 result-value">${fmt(d.totalFees)}</span>
-            </div>
-
-            ${ltvWarning}
-
-            <div class="mt-4 pt-3 ${bc2} border-t">
-                <div class="text-xs font-semibold text-brand-400 uppercase tracking-wider mb-2">Résumé du crédit</div>
-                <div class="flex justify-between py-1">
-                    <span class="text-gray-400">Prix du bien</span>
-                    <span class="font-medium result-value">${fmt(d.price)}</span>
-                </div>
-                <div class="flex justify-between py-1">
-                    <span class="text-gray-400">Quotité (LTV)</span>
-                    <span class="font-medium ${d.ltv > 90 ? 'text-red-400' : d.ltv > 80 ? 'text-orange-400' : 'text-green-400'}">${d.ltv.toFixed(1).replace('.', ',')}%</span>
-                </div>
-                <div class="flex justify-between py-1">
-                    <span class="text-gray-400">Taux effectif</span>
-                    <span class="font-medium">${d.effectiveRate.toFixed(2).replace('.', ',')}%</span>
-                </div>
-                <div class="flex justify-between py-1">
-                    <span class="text-gray-400">Capital emprunté</span>
-                    <span class="font-medium result-value">${fmt(d.financingNeed)}</span>
-                </div>
-                <div class="flex justify-between py-1">
-                    <span class="text-gray-400">Nombre de mensualités</span>
-                    <span class="font-medium">${d.n}</span>
-                </div>
-                <div class="flex justify-between py-1">
-                    <span class="text-gray-400">Coût total des intérêts</span>
-                    <span class="font-medium result-value">${fmt(d.totalCredit)}</span>
-                </div>
-                ${d.asrdEnabled ? `
-                <div class="flex justify-between py-1">
-                    <span class="text-gray-400">Assurance solde restant dû <span class="text-xs">(prime unique)</span></span>
-                    <span class="font-medium text-teal-400 result-value">${fmt(d.asrd.singlePremium)}</span>
-                </div>
-                <div class="flex justify-between py-1">
-                    <span class="text-gray-400">Mensualité crédit + ASRD</span>
-                    <span class="font-medium result-value">${fmt(d.monthlyTotal)}</span>
-                </div>
-                ` : ''}
-                <div class="flex justify-between py-1 font-semibold text-base mt-2 pt-2 ${bc2} border-t">
-                    <span>Coût total de l'opération</span>
-                    <span class="text-brand-400 result-value">${fmt(d.price + d.totalFees + d.totalCredit + (d.asrdEnabled ? d.asrd.singlePremium : 0))}</span>
-                </div>
-            </div>
-        `;
-    }
-
-    // ─── Scenarios ────────────────────────────────────────
-    const scenarioColors = ['#5a8a5c', '#e0a858', '#7c8fb0'];
-    const scenarioLabels = ['A', 'B', 'C'];
-
-    function saveScenario() {
-        if (!lastCalcResult) return;
-        if (savedScenarios.length >= 3) {
-            // Replace oldest
-            savedScenarios.shift();
-        }
-        const s = { ...lastCalcResult, id: Date.now() };
-        savedScenarios.push(s);
-        renderScenarios();
-        showToast(`Scénario ${scenarioLabels[(savedScenarios.length - 1) % 3]} sauvegardé ✓`);
-    }
-
-    function removeScenario(id) {
-        savedScenarios = savedScenarios.filter(s => s.id !== id);
-        renderScenarios();
-    }
-
-    function clearScenarios() {
-        savedScenarios = [];
-        renderScenarios();
-    }
-
-    function renderScenarios() {
-        const section = document.getElementById('scenarioSection');
-        const grid = document.getElementById('scenarioGrid');
-        const table = document.getElementById('scenarioTable');
-        const clearBtn = document.getElementById('clearScenariosBtn');
-
-        if (savedScenarios.length === 0) {
-            section.classList.add('hidden');
-            clearBtn.classList.add('hidden');
-            return;
-        }
-
-        section.classList.remove('hidden');
-        clearBtn.classList.remove('hidden');
-        const bc = isDark ? 'border-gray-700' : 'border-gray-300';
-        const bg = isDark ? 'bg-gray-800' : 'bg-gray-100';
-        const bgCard = isDark ? 'bg-gray-800/60' : 'bg-gray-100/60';
-
-        // Scenario cards
-        grid.style.gridTemplateColumns = `repeat(${savedScenarios.length}, minmax(0, 1fr))`;
-        grid.innerHTML = savedScenarios.map((s, i) => {
-            const color = scenarioColors[i % 3];
-            const label = scenarioLabels[i % 3];
-            const debtColor = s.debtRatio < 35 ? 'text-green-400' : s.debtRatio <= 45 ? 'text-orange-400' : 'text-red-400';
-            const ltvColor = s.ltv <= 80 ? 'text-green-400' : s.ltv <= 90 ? 'text-orange-400' : 'text-red-400';
-            return `
-                <div class="scenario-card rounded-xl ${bgCard} border ${bc} p-4 relative">
-                    <button onclick="removeScenario(${s.id})" class="scenario-remove absolute top-2 right-2 w-6 h-6 rounded-full bg-gray-700 hover:bg-red-500 text-gray-400 hover:text-white flex items-center justify-center text-xs transition-colors">&times;</button>
-                    <div class="flex items-center gap-2 mb-3">
-                        <span class="scenario-badge text-white" style="background:${color}">${label}</span>
-                        <span class="text-sm font-semibold">${fmtShort(s.price)}</span>
-                        <span class="text-xs text-gray-500">${s.region === 'bruxelles' ? 'BXL' : 'WAL'}</span>
-                    </div>
-                    <div class="space-y-1.5 text-xs">
-                        <div class="flex justify-between"><span class="text-gray-400">Mensualité</span><span class="font-semibold result-value">${fmt(s.monthlyTotal)}</span></div>
-                        <div class="flex justify-between"><span class="text-gray-400">Taux</span><span class="font-medium">${s.rate.toFixed(2).replace('.', ',')}%</span></div>
-                        <div class="flex justify-between"><span class="text-gray-400">Durée</span><span class="font-medium">${s.years} ans</span></div>
-                        <div class="flex justify-between"><span class="text-gray-400">Endettement</span><span class="font-medium ${debtColor}">${s.debtRatio.toFixed(1).replace('.', ',')}%</span></div>
-                        <div class="flex justify-between"><span class="text-gray-400">LTV</span><span class="font-medium ${ltvColor}">${s.ltv.toFixed(0)}%</span></div>
-                        <div class="flex justify-between"><span class="text-gray-400">PEB</span><span class="font-medium">${s.peb}</span></div>
-                        ${s.asrdEnabled ? `<div class="flex justify-between"><span class="text-gray-400">ASRD/mois</span><span class="font-medium text-teal-400 result-value">${fmt(s.monthlyASRD)}</span></div>` : ''}
-                    </div>
-                    <div class="mt-3 pt-2 ${bc} border-t">
-                        <div class="flex justify-between text-xs"><span class="text-gray-400">Coût total</span><span class="font-bold text-brand-400 result-value">${fmtShort(s.totalOperation)}</span></div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        // Comparison table
-        if (savedScenarios.length >= 2) {
-            const rows = [
-                { label: 'Prix', key: s => fmt(s.price) },
-                { label: 'Apport', key: s => fmt(s.downPayment) },
-                { label: 'Taux effectif', key: s => s.rate.toFixed(2).replace('.', ',') + '%' },
-                { label: 'Durée', key: s => s.years + ' ans' },
-                { label: 'Mensualité totale', key: s => fmt(s.monthlyTotal), bold: true },
-                { label: 'Reste à vivre', key: s => fmt(s.remaining) },
-                { label: 'Endettement', key: s => { const v = s.debtRatio.toFixed(1).replace('.',',')+'%'; const c = s.debtRatio<35?'text-green-400':s.debtRatio<=45?'text-orange-400':'text-red-400'; return `<span class="${c}">${v}</span>`; } },
-                { label: 'Quotité (LTV)', key: s => { const v = s.ltv.toFixed(0)+'%'; const c = s.ltv<=80?'text-green-400':s.ltv<=90?'text-orange-400':'text-red-400'; return `<span class="${c}">${v}</span>`; } },
-                { label: 'Frais totaux', key: s => fmt(s.totalFees) },
-                { label: 'Coût intérêts', key: s => fmt(s.totalCredit) },
-                { label: 'ASRD (prime)', key: s => s.asrdEnabled ? fmt(s.asrdSingle) : '—' },
-                { label: 'Coût total opération', key: s => fmt(s.totalOperation), bold: true },
-            ];
-
-            // Find best values for highlighting
-            const bestMonthly = Math.min(...savedScenarios.map(s => s.monthlyTotal));
-            const bestTotal = Math.min(...savedScenarios.map(s => s.totalOperation));
-
-            table.innerHTML = `
-                <table class="w-full text-xs">
-                    <thead>
-                        <tr class="${bc} border-b">
-                            <th class="text-left py-2 text-gray-500 font-medium pr-4"></th>
-                            ${savedScenarios.map((s, i) => `<th class="text-right py-2 px-2"><span class="scenario-badge text-white text-xs" style="background:${scenarioColors[i]}">${scenarioLabels[i]}</span></th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rows.map(row => `
-                            <tr class="${bc} border-b">
-                                <td class="py-1.5 text-gray-400 pr-4 ${row.bold ? 'font-semibold' : ''}">${row.label}</td>
-                                ${savedScenarios.map(s => `<td class="text-right py-1.5 px-2 result-value ${row.bold ? 'font-semibold' : ''}">${row.key(s)}</td>`).join('')}
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-                <p class="text-xs text-gray-500 mt-3">💡 Astuce : modifiez les paramètres et sauvegardez un nouveau scénario pour comparer.</p>
-            `;
-        } else {
-            table.innerHTML = '<p class="text-xs text-gray-500 mt-2">Sauvegardez au moins 2 scénarios pour les comparer.</p>';
-        }
-    }
-
-    // ─── Savings Remaining ─────────────────────────────────
-    function updateSavingsRemaining(downPayment) {
-        const totalSavings = parseFloat(document.getElementById('totalSavings').value) || 0;
-        const box = document.getElementById('savingsRemainBox');
-        if (totalSavings <= 0) { box.classList.add('hidden'); return; }
-        box.classList.remove('hidden');
-
-        const remaining = totalSavings - downPayment;
-        const pct = Math.max(0, Math.min(100, (remaining / totalSavings) * 100));
-        const display = document.getElementById('savingsRemainDisplay');
-        const bar = document.getElementById('savingsBar');
-        const warning = document.getElementById('savingsWarning');
-
-        display.textContent = fmt(remaining);
-        bar.style.width = pct + '%';
-
-        // Color coding
-        display.classList.remove('text-green-400', 'text-orange-400', 'text-red-400');
-        bar.classList.remove('bg-green-500', 'bg-orange-500', 'bg-red-500');
-        box.classList.remove('bg-green-500/10', 'border-green-500/20', 'bg-orange-500/10', 'border-orange-500/20', 'bg-red-500/10', 'border-red-500/20');
-        box.classList.remove('border');
-
-        if (remaining < 0) {
-            display.classList.add('text-red-400');
-            bar.classList.add('bg-red-500');
-            box.classList.add('bg-red-500/10', 'border', 'border-red-500/20');
-            warning.classList.remove('hidden');
-            warning.className = 'text-xs mt-2 text-red-400';
-            warning.textContent = '⚠️ Votre apport dépasse votre épargne !';
-        } else if (remaining < 5000) {
-            display.classList.add('text-orange-400');
-            bar.classList.add('bg-orange-500');
-            box.classList.add('bg-orange-500/10', 'border', 'border-orange-500/20');
-            warning.classList.remove('hidden');
-            warning.className = 'text-xs mt-2 text-orange-400';
-            warning.textContent = '⚠️ Épargne de sécurité très faible — prévoyez un coussin pour les imprévus.';
-        } else if (remaining < 15000) {
-            display.classList.add('text-orange-400');
-            bar.classList.add('bg-orange-500');
-            box.classList.add('bg-orange-500/10', 'border', 'border-orange-500/20');
-            warning.classList.remove('hidden');
-            warning.className = 'text-xs mt-2 text-orange-400';
-            warning.textContent = '💡 Pensez à garder ~3-6 mois de charges en réserve (déménagement, travaux, imprévus).';
-        } else {
-            display.classList.add('text-green-400');
-            bar.classList.add('bg-green-500');
-            box.classList.add('bg-green-500/10', 'border', 'border-green-500/20');
-            warning.classList.add('hidden');
-        }
-    }
-
-    // ─── Export Functions ─────────────────────────────────
-    function toggleExportMenu() {
-        const menu = document.getElementById('exportMenu');
-        menu.classList.toggle('show');
-    }
-
-    // Close export menu on outside click
-    document.addEventListener('click', (e) => {
-        const dropdown = document.querySelector('.export-dropdown');
-        const menu = document.getElementById('exportMenu');
-        if (dropdown && menu && !dropdown.contains(e.target)) {
-            menu.classList.remove('show');
-        }
-    });
-
-    function showExportLoading() {
-        const overlay = document.createElement('div');
-        overlay.className = 'export-loading';
-        overlay.id = 'exportLoadingOverlay';
-        overlay.innerHTML = '<div class="export-loading-box"><div class="export-spinner"></div><div class="text-sm font-medium">Génération en cours…</div></div>';
-        document.body.appendChild(overlay);
-    }
-
-    function hideExportLoading() {
-        const overlay = document.getElementById('exportLoadingOverlay');
-        if (overlay) overlay.remove();
-    }
-
-    async function exportAs(format) {
-        document.getElementById('exportMenu').classList.remove('show');
-        if (!lastCalcResult) { showToast('Lancez d\'abord une simulation'); return; }
-
-        showExportLoading();
-
-        // Build a temporary export container with all result data
-        const exportDiv = document.createElement('div');
-        exportDiv.style.cssText = 'position:fixed;left:-9999px;top:0;width:800px;padding:40px;font-family:Inter,system-ui,sans-serif;z-index:-1;';
-        exportDiv.style.background = isDark ? '#11140f' : '#f6f8f5';
-        exportDiv.style.color = isDark ? '#eef1ec' : '#2c322a';
-
-        const s = lastCalcResult;
-        const debtColor = s.debtRatio < 35 ? '#22c55e' : s.debtRatio <= 45 ? '#f59e0b' : '#ef4444';
-        const ltvColor = s.ltv <= 80 ? '#22c55e' : s.ltv <= 90 ? '#f59e0b' : '#ef4444';
-        const feasLabel = s.debtRatio < 35 ? '✅ Projet réalisable' : s.debtRatio <= 45 ? '⚠️ Projet tendu' : '🚫 Projet à risque';
-
-        const cardBg = isDark ? '#1c211b' : '#ffffff';
-        const cardBorder = isDark ? '#2c322a' : '#dfe4db';
-        const textMuted = isDark ? '#99a396' : '#727d6f';
-        const textMain = isDark ? '#f6f8f5' : '#2c322a';
-        const brandColor = '#5a8a5c';
-
-        exportDiv.innerHTML = `
-            <div style="margin-bottom:24px;display:flex;align-items:center;gap:12px;">
-                <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#5a8a5c,#3d6b3f);display:flex;align-items:center;justify-content:center;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="17" rx="8" ry="4"/><circle cx="9" cy="13" r="2.2"/><circle cx="15" cy="13" r="2.2"/><circle cx="12" cy="11" r="2.2"/><path d="M6.5 9c1-3.5 4-5.5 5.5-5.5s4.5 2 5.5 5.5"/></svg>
-                </div>
-                <div>
-                    <div style="font-size:16px;font-weight:700;color:${textMain}">Nouveau Nid</div>
-                    <div style="font-size:11px;color:${textMuted}">Simulation hypothécaire — ${new Date().toLocaleDateString('fr-BE')}</div>
-                </div>
-            </div>
-
-            <div style="background:${cardBg};border:1px solid ${cardBorder};border-radius:16px;padding:24px;margin-bottom:16px;">
-                <div style="font-size:18px;font-weight:700;color:${debtColor};margin-bottom:4px;">${feasLabel}</div>
-                <div style="font-size:13px;color:${textMuted};margin-bottom:16px;">Endettement : ${s.debtRatio.toFixed(1).replace('.',',')}% — Région : ${s.region === 'bruxelles' ? 'Bruxelles' : 'Wallonie'}</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">
-                    <div style="background:${isDark ? '#2c322a' : '#eef1ec'};padding:14px;border-radius:12px;text-align:center;">
-                        <div style="font-size:11px;color:${textMuted};margin-bottom:4px;">Mensualité</div>
-                        <div style="font-size:18px;font-weight:700;color:${textMain}">${fmt(s.monthlyTotal)}</div>
-                    </div>
-                    <div style="background:${isDark ? '#2c322a' : '#eef1ec'};padding:14px;border-radius:12px;text-align:center;">
-                        <div style="font-size:11px;color:${textMuted};margin-bottom:4px;">Reste à vivre</div>
-                        <div style="font-size:18px;font-weight:700;color:${textMain}">${fmt(s.remaining)}</div>
-                    </div>
-                    <div style="background:${isDark ? '#2c322a' : '#eef1ec'};padding:14px;border-radius:12px;text-align:center;">
-                        <div style="font-size:11px;color:${textMuted};margin-bottom:4px;">Quotité (LTV)</div>
-                        <div style="font-size:18px;font-weight:700;color:${ltvColor}">${s.ltv.toFixed(0)}%</div>
-                    </div>
-                    <div style="background:${isDark ? '#2c322a' : '#eef1ec'};padding:14px;border-radius:12px;text-align:center;">
-                        <div style="font-size:11px;color:${textMuted};margin-bottom:4px;">Endettement</div>
-                        <div style="font-size:18px;font-weight:700;color:${debtColor}">${s.debtRatio.toFixed(1).replace('.',',')}%</div>
+        <div id="toastContainer"></div>
+
+        <!-- ── Checklist ──────────────────────────────────────────── -->
+        <section class="mx-auto mt-10 max-w-7xl px-4 sm:px-6">
+            <div class="card">
+                <button
+                    type="button"
+                    id="checklistToggle"
+                    aria-expanded="false"
+                    aria-controls="checklistPanel"
+                    class="flex w-full items-center justify-between rounded-2xl p-6 hover:bg-gray-100/50 dark:hover:bg-gray-800/30"
+                >
+                    <span class="flex items-center gap-3">
+                        <span class="text-xl" aria-hidden="true">📋</span>
+                        <span class="text-base font-bold text-gray-800 dark:text-gray-200"
+                            >Checklist achat immobilier en Belgique</span
+                        >
+                    </span>
+                    <svg
+                        class="detail-icon size-5 text-gray-500"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div id="checklistPanel" class="hidden px-6 pb-6">
+                    <p class="mb-5 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+                        Points essentiels à vérifier avant et pendant l’achat d’un bien en Belgique.
+                    </p>
+                    <div id="checklistContent" class="space-y-6"></div>
+                    <div class="mt-6 border-t border-gray-200 pt-4 dark:border-gray-800">
+                        <p class="text-[11px] leading-relaxed text-gray-600 dark:text-gray-500">
+                            Sources :
+                            <a
+                                href="https://www.notaire.be/immobilier/acheter-et-vendre-un-bien-immobilier"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="underline hover:text-brand-600"
+                                >notaire.be</a
+                            >
+                            · RGIE · Code civil belge · SPW Wallonie (BDES, urbanisme) · loi belge sur le
+                            crédit hypothécaire. Cette checklist est indicative et ne remplace pas les
+                            conseils de votre notaire.
+                        </p>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-                <div style="background:${cardBg};border:1px solid ${cardBorder};border-radius:16px;padding:20px;">
-                    <div style="font-size:11px;font-weight:600;color:${brandColor};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;">Paramètres</div>
-                    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:${textMuted}">Prix du bien</span><span style="font-weight:600;color:${textMain}">${fmt(s.price)}</span></div>
-                    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:${textMuted}">Apport personnel</span><span style="font-weight:600;color:${textMain}">${fmt(s.downPayment)}</span></div>
-                    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:${textMuted}">Taux effectif</span><span style="font-weight:600;color:${textMain}">${s.rate.toFixed(2).replace('.',',')}%</span></div>
-                    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:${textMuted}">Durée</span><span style="font-weight:600;color:${textMain}">${s.years} ans</span></div>
-                    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:${textMuted}">Score PEB</span><span style="font-weight:600;color:${textMain}">${s.peb}</span></div>
-                </div>
-                <div style="background:${cardBg};border:1px solid ${cardBorder};border-radius:16px;padding:20px;">
-                    <div style="font-size:11px;font-weight:600;color:${brandColor};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;">Résumé financier</div>
-                    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:${textMuted}">Capital emprunté</span><span style="font-weight:600;color:${textMain}">${fmt(s.financingNeed)}</span></div>
-                    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:${textMuted}">Coût des intérêts</span><span style="font-weight:600;color:${textMain}">${fmt(s.totalCredit)}</span></div>
-                    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:${textMuted}">Frais totaux</span><span style="font-weight:600;color:${textMain}">${fmt(s.totalFees)}</span></div>
-                    ${s.asrdEnabled ? `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:${textMuted}">ASRD (prime unique)</span><span style="font-weight:600;color:#14b8a6">${fmt(s.asrdSingle)}</span></div>` : ''}
-                    <div style="display:flex;justify-content:space-between;padding:10px 0 6px;font-size:14px;font-weight:700;border-top:1px solid ${cardBorder};margin-top:6px;"><span style="color:${textMain}">Coût total opération</span><span style="color:${brandColor}">${fmt(s.totalOperation)}</span></div>
-                </div>
-            </div>
-
-            <div style="text-align:center;font-size:10px;color:${textMuted};padding-top:8px;">
-                Simulation indicative — ne constitue pas un conseil financier · Données fiscales 2025-2026 · chievres.app
-            </div>
-        `;
-
-        document.body.appendChild(exportDiv);
-
-        try {
-            // Wait for fonts to render
-            await new Promise(r => setTimeout(r, 200));
-
-            const canvas = await html2canvas(exportDiv, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: isDark ? '#11140f' : '#f6f8f5',
-                logging: false,
-            });
-
-            if (format === 'png') {
-                const link = document.createElement('a');
-                link.download = `simulation-hypothecaire-${new Date().toISOString().slice(0,10)}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                showToast('Image PNG exportée ✓');
-            } else if (format === 'pdf') {
-                const { jsPDF } = window.jspdf;
-                const imgData = canvas.toDataURL('image/png');
-                const imgWidth = canvas.width;
-                const imgHeight = canvas.height;
-                const pdfWidth = 210; // A4 mm
-                const pdfHeight = (imgHeight * pdfWidth) / imgWidth;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const pageHeight = 297;
-                if (pdfHeight <= pageHeight) {
-                    pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
-                } else {
-                    // Scale to fit A4
-                    const scale = (pageHeight - 20) / pdfHeight;
-                    pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth * scale + (pdfWidth * (1-scale)) / 2, (pageHeight - 20));
-                }
-                pdf.save(`simulation-hypothecaire-${new Date().toISOString().slice(0,10)}.pdf`);
-                showToast('PDF exporté ✓');
-            }
-        } catch (err) {
-            console.error('Export error:', err);
-            showToast('Erreur lors de l\'export');
-        } finally {
-            document.body.removeChild(exportDiv);
-            hideExportLoading();
-        }
-    }
-
-    // ─── Init ─────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', () => {
-        // Apply light mode classes to all cards & inputs on load
-        document.querySelectorAll('.bg-gray-900').forEach(el => {
-            el.classList.remove('bg-gray-900', 'border-gray-800');
-            el.classList.add('bg-white', 'border-gray-200');
-        });
-        document.querySelectorAll('.bg-gray-800\\/60, .bg-gray-800').forEach(el => {
-            el.classList.remove('bg-gray-800/60', 'bg-gray-800');
-            el.classList.add('bg-gray-100/60', 'bg-gray-100');
-        });
-        calculate();
-    });
-</script>
-
-</body>
+        <footer
+            class="mt-10 border-t border-gray-200/60 py-6 text-center text-xs text-gray-600 dark:border-gray-800/60 dark:text-gray-500"
+        >
+            <p>
+                Simulation indicative — ne constitue pas une offre de crédit ni un conseil financier.
+                Paramètres fiscaux vérifiés le <span id="paramsDate">—</span>.
+            </p>
+        </footer>
+    </body>
 </html>
